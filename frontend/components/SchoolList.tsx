@@ -16,6 +16,7 @@ interface SchoolListProps {
 
 export default function SchoolList({ initialFilters, title, subtitle, schools = MOCK_SCHOOLS }: SchoolListProps) {
     const [showMobileFilters, setShowMobileFilters] = useState(false);
+    const [visibleCount, setVisibleCount] = useState(12);
 
     const [filters, setFilters] = useState<FilterState>({
         location: initialFilters?.location || '',
@@ -48,7 +49,7 @@ export default function SchoolList({ initialFilters, title, subtitle, schools = 
             // Board (if array is not empty)
             if (filters.board.length > 0) {
                 // Mock data needs board normalization, assuming simple string match for now
-                const schoolBoard = school.boardSecName || school.boardHighSecName;
+                const schoolBoard = school.boardSecName;
                 // check if schoolBoard is included in selected boards
                 // (This needs robust data normalization in real app)
             }
@@ -123,9 +124,22 @@ export default function SchoolList({ initialFilters, title, subtitle, schools = 
 
                     <div className="space-y-4">
                         {filteredSchools.length > 0 ? (
-                            filteredSchools.map(school => (
-                                <SchoolCard key={school.id} school={school} />
-                            ))
+                            <>
+                                {filteredSchools.slice(0, visibleCount).map(school => (
+                                    <SchoolCard key={school.id} school={school} />
+                                ))}
+
+                                {visibleCount < filteredSchools.length && (
+                                    <div className="text-center mt-8">
+                                        <button
+                                            onClick={() => setVisibleCount(prev => prev + 12)}
+                                            className="bg-white border border-gray-300 text-slate-700 font-bold py-3 px-8 rounded-full shadow-sm hover:bg-gray-50 hover:shadow-md transition-all"
+                                        >
+                                            Load More Schools ({filteredSchools.length - visibleCount} remaining)
+                                        </button>
+                                    </div>
+                                )}
+                            </>
                         ) : (
                             <div className="text-center py-20 bg-white rounded-xl border border-gray-200">
                                 <p className="text-slate-500 text-lg">No schools match your specific criteria.</p>

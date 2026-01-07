@@ -6,7 +6,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { MOCK_SCHOOLS } from '@/constants';
 import { useStore } from '@/context/StoreContext';
-import { FeeStructure, FeeDetails } from '@/types';
+import { FeeStructure, FeeDetails, School } from '@/types';
 import InfoTooltip from '@/components/InfoTooltip';
 import {
     MapPin, Phone, User, CheckCircle, ChevronDown, ChevronUp, ShieldCheck, Heart, Share2, Scale, Navigation,
@@ -112,23 +112,29 @@ const ResultBar: React.FC<{ label: string, percentage: number, color: string }> 
     </div>
 );
 
-const InfraIconItem: React.FC<{ icon: React.ReactNode, label: string, value: string | number }> = ({ icon, label, value }) => (
-    <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-100">
-        <div className="text-gray-500">
-            {React.cloneElement(icon as React.ReactElement, { className: "w-5 h-5" })}
+const InfraIconItem: React.FC<{ icon: React.ReactNode, label: string, value: string | number | undefined | null }> = ({ icon, label, value }) => {
+    if (!value || value === 'NA' || value === '0' || value === 0) return null;
+    return (
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-100">
+            <div className="text-gray-500">
+                {React.cloneElement(icon as any, { className: "w-5 h-5" })}
+            </div>
+            <div>
+                <span className="block text-xs text-gray-500 uppercase font-semibold">{label}</span>
+                <span className="block text-sm font-bold text-slate-800">{value}</span>
+            </div>
         </div>
-        <div>
-            <span className="block text-xs text-gray-500 uppercase font-semibold">{label}</span>
-            <span className="block text-sm font-bold text-slate-800">{value}</span>
-        </div>
-    </div>
-);
+    );
+};
 
 // --- Main Client Component ---
 
-export default function SchoolDetailClient({ id }: { id: string }) {
+interface SchoolDetailClientProps {
+    school: School;
+}
+
+const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
     const router = useRouter();
-    const school = MOCK_SCHOOLS.find(s => s.id === id);
     const { toggleShortlist, isInShortlist, toggleCompare, isInCompare } = useStore();
     const [animating, setAnimating] = useState(false);
     const [activeFeeTab, setActiveFeeTab] = useState<keyof FeeStructure>('primary');
@@ -364,8 +370,8 @@ export default function SchoolDetailClient({ id }: { id: string }) {
                             </AccordionSection>
 
                             {/* Fee Structure */}
-                            <AccordionSection title="Fee Structure" icon={<GraduationCap className="w-5 h-5 text-purple-500" />} defaultOpen={true}>
-                                {school.feeStructure ? (
+                            {school.feeStructure && Object.keys(school.feeStructure).length > 0 ? (
+                                <AccordionSection title="Fee Structure" icon={<GraduationCap className="w-5 h-5 text-purple-500" />} defaultOpen={true}>
                                     <div>
                                         <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
                                             {(['primary', 'middle', 'secondary', 'seniorSecondary'] as const).map((key) => (
@@ -386,50 +392,15 @@ export default function SchoolDetailClient({ id }: { id: string }) {
                                         {school.feeStructure[activeFeeTab] ? (
                                             <FeeTable details={school.feeStructure[activeFeeTab]!} />
                                         ) : (
-                                            <div className="text-center text-gray-500 py-4">Fee details not available for this category.</div>
+                                            <div className="text-center text-gray-500 py-4">Select a category to view fees.</div>
                                         )}
-                                        <p className="text-xs text-gray-400 mt-3 italic">* Fees are indicative based on 2024-25 data. Verify with school.</p>
+                                        <p className="text-xs text-gray-400 mt-3 italic">* Fees are indicative based on available data. Verify with school.</p>
                                     </div>
-                                ) : (
-                                    <div className="text-center py-6 text-gray-500">Detailed fee structure not available. Contact school.</div>
-                                )}
-                            </AccordionSection>
+                                </AccordionSection>
+                            ) : null}
 
-                            {/* Academic Results (Mocked) */}
-                            <AccordionSection title="Academic Performance" icon={<Trophy className="w-5 h-5 text-yellow-500" />} defaultOpen={true}>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div>
-                                        <h4 className="text-sm font-bold text-gray-500 uppercase mb-4">Board Exam Results (2024)</h4>
-                                        <ResultBar label="Class 10 Pass %" percentage={98} color="bg-green-500" />
-                                        <ResultBar label="Class 12 Pass %" percentage={92} color="bg-blue-500" />
-                                    </div>
-                                    <div className="bg-blue-50 rounded-xl p-4 flex flex-col justify-center">
-                                        <h4 className="text-sm font-bold text-blue-800 mb-2">Academic Highlights</h4>
-                                        <ul className="text-sm text-slate-700 space-y-2 list-disc list-inside">
-                                            <li><strong>{school.totTchPgraduateAbove}</strong> Teachers with Post-Graduate degrees.</li>
-                                            <li><strong>{trainingRate}%</strong> Teachers attended professional training this year.</li>
-                                            <li>Student Teacher Ratio of <strong>1:{ptr}</strong> ensures personal attention.</li>
-                                            <li>Offers <strong>{school.mediumOfInstrName1}</strong> medium of instruction.</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </AccordionSection>
-
-                            {/* Gallery Placeholder */}
-                            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                                <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
-                                    <ImageIcon className="w-5 h-5 text-pink-500" />
-                                    Gallery
-                                </h2>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                    <img src={`https://picsum.photos/300/200?random=${school.id}1`} className="rounded-lg object-cover w-full h-32 hover:opacity-90 cursor-pointer" alt="Gallery 1" />
-                                    <img src={`https://picsum.photos/300/200?random=${school.id}2`} className="rounded-lg object-cover w-full h-32 hover:opacity-90 cursor-pointer" alt="Gallery 2" />
-                                    <img src={`https://picsum.photos/300/200?random=${school.id}3`} className="rounded-lg object-cover w-full h-32 hover:opacity-90 cursor-pointer" alt="Gallery 3" />
-                                    <div className="bg-gray-100 rounded-lg flex items-center justify-center h-32 text-gray-400 font-bold text-sm cursor-pointer hover:bg-gray-200">
-                                        +5 More
-                                    </div>
-                                </div>
-                            </div>
+                            {/* Academic Performance - HIDDEN (No data available yet) */}
+                            {/* Gallery - HIDDEN (No real images available yet) */}
 
                         </div>
 
@@ -542,4 +513,6 @@ export default function SchoolDetailClient({ id }: { id: string }) {
             <Footer />
         </>
     );
-}
+};
+
+export default SchoolDetailClient;

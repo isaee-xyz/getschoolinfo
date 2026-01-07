@@ -44,7 +44,7 @@ export default async function BoardPage({ params }: Props) {
     const targetBoard = board.toLowerCase();
 
     const boardSchools = MOCK_SCHOOLS.filter(s => {
-        const schoolBoard = (s.boardSecName || s.boardHighSecName || "").toLowerCase();
+        const schoolBoard = (s.boardSecName || "").toLowerCase();
 
         if (targetBoard === 'cbse') return schoolBoard.includes('cbse');
         if (targetBoard === 'icse') return schoolBoard.includes('icse') || schoolBoard.includes('cisce');
@@ -69,7 +69,7 @@ export default async function BoardPage({ params }: Props) {
             "itemListElement": boardSchools.slice(0, 10).map((school, index) => ({
                 "@type": "ListItem",
                 "position": index + 1,
-                "url": `https://getschoolinfo.com/school/${school.id}`,
+                "url": `https://getschoolinfo.com/${school.district.toLowerCase().replace(/\s+/g, '-')}/${school.slug || 'school-' + school.id}`,
                 "name": school.name
             }))
         }

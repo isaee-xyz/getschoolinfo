@@ -11,6 +11,14 @@ import { CheckCircle, XCircle, Share2, ArrowLeft, Trash2 } from 'lucide-react';
 import { School } from '@/types';
 
 // Helper for SearchParams
+
+// Define interface for row configuration
+interface CompareRow {
+    label: string;
+    render: (s: School) => React.ReactNode;
+    isBold?: boolean;
+}
+
 function CompareContent() {
     const { compareList, toggleCompare, clearCompare } = useStore();
     const searchParams = useSearchParams();
@@ -43,7 +51,7 @@ function CompareContent() {
         }
     };
 
-    const sections = [
+    const sections: { id: string; title: string; show: boolean; rows: CompareRow[] }[] = [
         {
             id: 'basic',
             title: 'Basic Information',
@@ -155,7 +163,7 @@ function CompareContent() {
                                                     <XCircle className="w-5 h-5" />
                                                 </button>
                                                 <img src={school.image} alt={school.name} className="w-16 h-12 object-cover rounded mb-2" />
-                                                <Link href={`/school/${school.id}`} className="block font-bold text-slate-900 hover:text-blue-600 mb-1">
+                                                <Link href={`/${school.district.toLowerCase().replace(/\s+/g, '-')}/${school.slug || 'school-' + school.id}`} className="block font-bold text-slate-900 hover:text-blue-600 mb-1">
                                                     {school.name}
                                                 </Link>
                                                 <p className="text-xs text-slate-500">{school.district}</p>

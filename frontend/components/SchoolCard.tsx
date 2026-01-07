@@ -77,7 +77,7 @@ const SchoolCard: React.FC<SchoolCardProps> = ({ school }) => {
               <h3 className="text-lg font-bold text-slate-900 leading-tight mb-1">{school.name}</h3>
               <div className="flex items-center text-slate-500 text-xs">
                 <MapPin className="w-3 h-3 mr-1" />
-                {school.village}, {school.district}
+                {school.block}, {school.district}
               </div>
             </div>
             <span className="bg-gray-100 text-gray-700 text-[10px] font-bold px-2 py-1 rounded border border-gray-200 uppercase tracking-wide">
@@ -161,7 +161,7 @@ const SchoolCard: React.FC<SchoolCardProps> = ({ school }) => {
               Fee: ₹{(school.tuitionFeeInRupees / 12).toFixed(0)}/mo
             </div>
             <Link
-              href={`/school/${school.id}`}
+              href={`/${school.district.toLowerCase().replace(/\s+/g, '-')}/${school.slug || 'school-' + school.id}`}
               className="bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded hover:bg-slate-800 transition-colors"
             >
               View Report

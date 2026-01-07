@@ -35,9 +35,10 @@ export interface Leadership {
 export interface School {
   id: string;
   name: string;
-  udiseCode: string;
+  udiseCode?: string; // Optional because legacy cards might not have it in MOCK
+  slug?: string; // New field for URLs
   image: string;
-  
+
   // Location
   state: string;
   district: string;
@@ -73,7 +74,7 @@ export interface School {
   libraryYnDesc: "Yes" | "No";
   playgroundYnDesc: "Yes" | "No";
   auditoriumYn: boolean;
-  
+
   // Safety & Hygiene
   bndrywallType: "Pucca" | "Barbed wire" | "No Boundary" | "Partial";
   fireSafetyYn: 1 | 0;
@@ -81,15 +82,15 @@ export interface School {
   rampsYn: 1 | 0;
   handrailsYn: 1 | 0;
   toiletbFun: number;
-  toiletbCwsnFun: number; 
-  toiletgFun: number; 
+  toiletbCwsnFun: number;
+  toiletgFun: number;
 
   // Staff & Students (Extended for Derivative Metrics)
   totalTeacher: number;
-  totTchPgraduateAbove: number; 
-  tchReg: number; 
-  tchCont: number; 
-  rowTotal: number; 
+  totTchPgraduateAbove: number;
+  tchReg: number;
+  tchCont: number;
+  rowTotal: number;
   rowGirlTotal: number;
   rowBoyTotal?: number; // Added
   profQual3?: number; // B.Ed Qualified count
@@ -99,7 +100,7 @@ export interface School {
 
   // Fees & Leadership (New Structures)
   feeStructure?: FeeStructure;
-  
+
   // Legacy flat fee fields (kept for backward compatibility with cards)
   admissionFeeInRupees: number;
   tuitionFeeInRupees: number;

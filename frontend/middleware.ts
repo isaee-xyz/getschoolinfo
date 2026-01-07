@@ -26,7 +26,7 @@ const MAX_REQUESTS_PER_WINDOW = 100; // 100 requests per minute per IP
 
 export function middleware(request: NextRequest) {
     const ua = request.headers.get('user-agent')?.toLowerCase() || '';
-    const ip = request.ip || '127.0.0.1'; // Fallback for local
+    const ip = (request as any).ip || request.headers.get('x-forwarded-for') || '127.0.0.1';
 
     // --- Check 1: Bot Blocking ---
     // Allow legitimate bots (Google, GPT, etc.) implicitly by not listing them

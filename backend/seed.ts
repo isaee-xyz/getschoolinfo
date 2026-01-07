@@ -52,18 +52,30 @@ async function seed() {
                 const hasComputers = (s.desktopFun + s.laptopTot) > 0;
                 const hasSmartClass = s.digiBoardTot > 0;
 
+                // Slug Logic: [block-10]-[school-30]-[udise-5]
+                const cleanSlugPart = (str: string) => (str || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+                const blockSlug = cleanSlugPart(s.blockName).slice(0, 10).replace(/-+$/, '');
+                const nameSlug = cleanSlugPart(s.schoolName).slice(0, 30).replace(/-+$/, '');
+                const udiseRaw = (s.udise_code || s.udiseschCode || '00000').toString();
+                const udiseSuffix = udiseRaw.length > 5 ? udiseRaw.slice(-5) : udiseRaw;
+
+                // Final Slug
+                const slug = `${blockSlug}-${nameSlug}-${udiseSuffix}`;
+
                 await pool.query(
                     `INSERT INTO schools (
-            udise_code, name, address, district, block, state, pincode, 
+            udise_code, slug, name, address, district, block, state, pincode, 
             latitude, longitude, management, category, type, 
             low_class, high_class, estd_year, 
             total_students, total_teachers, student_teacher_ratio,
             has_playground, has_library, has_computers, has_internet, has_smart_class,
             admission_fee, tuition_fee, fee_structure, leadership
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27)
-          ON CONFLICT (udise_code) DO NOTHING`,
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)
+          ON CONFLICT (udise_code) DO UPDATE SET slug = EXCLUDED.slug, name = EXCLUDED.name`,
                     [
-                        s.udise_code || s.udiseschCode, // Handle both keys if present
+                        s.udise_code || s.udiseschCode,
+                        slug,
                         s.schoolName,
                         s.address,
                         s.districtName,

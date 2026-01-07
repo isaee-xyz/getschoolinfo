@@ -72,7 +72,7 @@ export default async function SchoolTypePage({ params }: Props) {
             "itemListElement": filteredSchools.slice(0, 10).map((school, index) => ({
                 "@type": "ListItem",
                 "position": index + 1,
-                "url": `https://getschoolinfo.com/school/${school.id}`,
+                "url": `https://getschoolinfo.com/${school.district.toLowerCase().replace(/\s+/g, '-')}/${school.slug || 'school-' + school.id}`,
                 "name": school.name
             }))
         }

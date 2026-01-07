@@ -4,6 +4,7 @@
 CREATE TABLE IF NOT EXISTS schools (
     id SERIAL PRIMARY KEY,
     udise_code VARCHAR(50) UNIQUE NOT NULL,
+    slug VARCHAR(255) UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL,
     
     -- Location
