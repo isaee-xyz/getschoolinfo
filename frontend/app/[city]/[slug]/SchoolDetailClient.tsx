@@ -100,17 +100,7 @@ const FeeTable: React.FC<{ details: FeeDetails }> = ({ details }) => {
     );
 };
 
-const ResultBar: React.FC<{ label: string, percentage: number, color: string }> = ({ label, percentage, color }) => (
-    <div className="mb-4">
-        <div className="flex justify-between text-sm font-semibold mb-1 text-slate-700">
-            <span>{label}</span>
-            <span>{percentage}% Pass</span>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-2.5">
-            <div className={`h-2.5 rounded-full ${color}`} style={{ width: `${percentage}%` }}></div>
-        </div>
-    </div>
-);
+
 
 const InfraIconItem: React.FC<{ icon: React.ReactNode, label: string, value: string | number | undefined | null }> = ({ icon, label, value }) => {
     if (!value || value === 'NA' || value === '0' || value === 0) return null;
@@ -213,7 +203,7 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
                         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
                             <div className="flex-1">
                                 <div className="flex items-start gap-4 mb-4">
-                                    <img src={school.image} alt="Logo" className="w-16 h-16 rounded-lg object-cover border border-gray-200 shadow-sm" />
+                                    {school.image && <img src={school.image} alt="Logo" className="w-16 h-16 rounded-lg object-cover border border-gray-200 shadow-sm" />}
                                     <div>
                                         <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 leading-tight mb-2">{school.name}</h1>
                                         <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -309,48 +299,48 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
                                     Compliance & Quality Audit
                                 </h2>
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                    <StatusBadge
+                                    {studentsPerClass > 0 && <StatusBadge
                                         status={crowdingStatus}
                                         label="Crowding Index"
                                         value={studentsPerClass}
                                         sub="Students/Class"
                                         tooltip="NCF Benchmark: 35 Students per classroom."
-                                    />
-                                    <StatusBadge
+                                    />}
+                                    {ptr > 0 && ptr !== Infinity && <StatusBadge
                                         status={ptrStatus}
                                         label="Attention Ratio"
                                         value={`1 : ${ptr}`}
                                         sub="Teacher : Student"
                                         tooltip="RTE Benchmark: 1 Teacher for every 30 Students."
-                                    />
-                                    <StatusBadge
+                                    />}
+                                    {school.totalTeacher > 0 && <StatusBadge
                                         status={trainingRate > 30 ? 'green' : 'red'}
                                         label="Teacher Training"
                                         value={`${trainingRate}%`}
                                         sub="Annually Trained"
                                         tooltip="Target: 30%+ teachers trained annually (NCERT)."
-                                    />
-                                    <StatusBadge
+                                    />}
+                                    {gpt > 0 && gpt !== Infinity && <StatusBadge
                                         status={gpt > 40 ? 'yellow' : 'green'}
                                         label="Girls Hygiene"
                                         value={`1 : ${gpt}`}
                                         sub="Toilet : Girls"
                                         tooltip="RTE Benchmark: 1 Toilet per 25-40 Girls."
-                                    />
-                                    <StatusBadge
+                                    />}
+                                    {bpt > 0 && bpt !== Infinity && <StatusBadge
                                         status={bpt > 40 ? 'yellow' : 'green'}
                                         label="Boys Hygiene"
                                         value={`1 : ${bpt}`}
                                         sub="Toilet : Boys"
                                         tooltip="RTE Benchmark: 1 Toilet per 25-40 Boys."
-                                    />
-                                    <StatusBadge
+                                    />}
+                                    {(school.instructionalDays || 0) > 0 && <StatusBadge
                                         status={daysPct >= 100 ? 'green' : 'yellow'}
                                         label="Instruction Days"
                                         value={school.instructionalDays || "NA"}
                                         sub="Days / Year"
                                         tooltip="RTE Benchmark: 220 Instructional Days/Year."
-                                    />
+                                    />}
                                 </div>
                             </div>
 
@@ -369,13 +359,18 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
                                 </div>
                             </AccordionSection>
 
-                            {/* Fee Structure */}
-                            {school.feeStructure && Object.keys(school.feeStructure).length > 0 ? (
+                            {/* Fee Structure - STRICT HIDE IF 0 */}
+                            {school.feeStructure && Object.values(school.feeStructure).some(f =>
+                                (f.tuitionFeeInRupees + f.admissionFeeInRupees + f.yearlyDevelopmentChargesInRupees) > 0
+                            ) ? (
                                 <AccordionSection title="Fee Structure" icon={<GraduationCap className="w-5 h-5 text-purple-500" />} defaultOpen={true}>
                                     <div>
                                         <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
-                                            {(['primary', 'middle', 'secondary', 'seniorSecondary'] as const).map((key) => (
-                                                school.feeStructure && school.feeStructure[key] && (
+                                            {(['primary', 'middle', 'secondary', 'seniorSecondary'] as const).map((key) => {
+                                                const f = school.feeStructure?.[key];
+                                                const total = f ? (f.tuitionFeeInRupees + f.admissionFeeInRupees) : 0;
+                                                if (!f || total === 0) return null; // Hide tab if 0 fee
+                                                return (
                                                     <button
                                                         key={key}
                                                         onClick={() => setActiveFeeTab(key)}
@@ -386,8 +381,8 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
                                                     >
                                                         {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1').trim()}
                                                     </button>
-                                                )
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                         {school.feeStructure[activeFeeTab] ? (
                                             <FeeTable details={school.feeStructure[activeFeeTab]!} />

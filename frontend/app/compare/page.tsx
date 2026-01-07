@@ -31,7 +31,23 @@ function CompareContent() {
     // Create a combined unique set of IDs to display
     // Prioritize URL IDs if they exist (shared view), otherwise store
     const displayIds = urlIds.length > 0 ? urlIds : compareList;
-    const schools = MOCK_SCHOOLS.filter(s => displayIds.includes(s.id));
+    const [schools, setSchools] = useState<School[]>([]);
+
+    useEffect(() => {
+        const fetchSchools = async () => {
+            if (displayIds.length === 0) return;
+            try {
+                // Fetch all schools and filter (Optimization: Implement /api/schools?ids=... in future)
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/schools`);
+                if (!res.ok) throw new Error("Failed to fetch");
+                const allSchools: School[] = await res.json();
+                setSchools(allSchools.filter(s => displayIds.includes(s.id?.toString()))); // Ensure ID match
+            } catch (err) {
+                console.error("Error fetching compare schools:", err);
+            }
+        };
+        fetchSchools();
+    }, [displayIds.join(',')]); // Re-run if IDs change
 
     const handleShare = () => {
         // In Next.js, we construct the URL. 
