@@ -32,7 +32,7 @@ app.get('/api/health', (req, res) => {
 
 app.get('/api/schools', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM schools LIMIT 10');
+    const result = await pool.query('SELECT * FROM schools');
     res.json(result.rows);
   } catch (err) {
     console.error(err);
