@@ -1,0 +1,5 @@
+{
+  "name": "GetSchoolInfo",
+  "description": "Official government-verified data platform for analyzing and comparing school quality, hygiene stats, and hidden fees.",
+  "requestFramePermissions": []
+}
