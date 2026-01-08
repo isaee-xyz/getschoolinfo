@@ -8,7 +8,7 @@ import {
     User as FirebaseUser,
     GoogleAuthProvider
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../lib/firebase';
 
 interface UserProfile {
@@ -18,6 +18,14 @@ interface UserProfile {
     phoneNumber?: string;
     studentName?: string;
     studentClass?: string;
+    onboardingStatus?: 'pending' | 'completed';
+    environment?: string;
+    lastLoginAt?: any;
+    metadata?: {
+        userAgent: string;
+        platform: string;
+        language: string;
+    };
     [key: string]: any;
 }
 
@@ -44,20 +52,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             if (currentUser) {
                 try {
-                    // Fetch existing profile from Firestore
                     const userDocRef = doc(db, 'users', currentUser.uid);
                     const userDoc = await getDoc(userDocRef);
 
-                    if (userDoc.exists()) {
-                        setUserProfile(userDoc.data() as UserProfile);
-                    } else {
-                        // Profile doesn't exist yet, we'll let the OnboardingModal handle creation
-                        setUserProfile(null);
+                    let profileData = userDoc.exists() ? (userDoc.data() as UserProfile) : {};
+
+                    // Prepare metadata and tracking info
+                    const updateData: Partial<UserProfile> = {
+                        email: currentUser.email,
+                        displayName: currentUser.displayName,
+                        photoURL: currentUser.photoURL,
+                        lastLoginAt: serverTimestamp(),
+                        environment: process.env.NEXT_PUBLIC_APP_ENV || 'development',
+                        metadata: {
+                            userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+                            language: typeof navigator !== 'undefined' ? navigator.language : '',
+                            platform: typeof navigator !== 'undefined' ? navigator.platform : '',
+                        }
+                    };
+
+                    // If new user (doc doesn't exist) or no status, set as pending
+                    if (!userDoc.exists() || !profileData.onboardingStatus) {
+                        updateData.onboardingStatus = 'pending';
                     }
+
+                    // Save/Update strictly to Firestore immediately to capture partial signup
+                    await setDoc(userDocRef, updateData, { merge: true });
+
+                    // Update local state (merge with existing data)
+                    setUserProfile({ ...profileData, ...updateData });
 
                     localStorage.setItem('getschool_user_uid', currentUser.uid);
                 } catch (error) {
-                    console.error("Error fetching user profile:", error);
+                    console.error("Error fetching/saving user profile:", error);
                 }
             } else {
                 setUserProfile(null);

@@ -17,8 +17,8 @@ export function OnboardingModal() {
     // If no user or loading auth, or profile already exists (and has required fields), don't show
     if (loading || !user) return null;
 
-    // Check if profile is complete (you might want to verify specific fields)
-    if (userProfile?.phoneNumber && userProfile?.studentName && userProfile?.studentClass) {
+    // Check if profile is complete based on status or legacy field check
+    if (userProfile?.onboardingStatus === 'completed' || (userProfile?.phoneNumber && userProfile?.studentName && userProfile?.studentClass)) {
         return null;
     }
 
@@ -54,9 +54,7 @@ export function OnboardingModal() {
                 phoneNumber: phone,
                 studentName,
                 studentClass,
-                email: user.email,
-                displayName: user.displayName,
-                photoURL: user.photoURL,
+                onboardingStatus: 'completed',
                 updatedAt: new Date().toISOString()
             });
             // Modal will auto-close due to `userProfile` check above
