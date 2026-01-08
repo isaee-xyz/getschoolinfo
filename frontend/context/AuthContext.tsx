@@ -8,7 +8,7 @@ import {
     User as FirebaseUser,
     GoogleAuthProvider
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, collection, addDoc, increment } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../lib/firebase';
 
 interface UserProfile {
@@ -21,10 +21,17 @@ interface UserProfile {
     onboardingStatus?: 'pending' | 'completed';
     environment?: string;
     lastLoginAt?: any;
+    loginCount?: number;
     metadata?: {
         userAgent: string;
         platform: string;
         language: string;
+        ip?: string;
+        city?: string;
+        region?: string;
+        country?: string;
+        networkType?: string;
+        timezone?: string;
     };
     [key: string]: any;
 }
@@ -56,19 +63,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     const userDoc = await getDoc(userDocRef);
 
                     let profileData = userDoc.exists() ? (userDoc.data() as UserProfile) : {};
+                    let locationData = {};
+                    let networkType = 'unknown';
 
-                    // Prepare metadata and tracking info
+                    // 1. Fetch Location Data (Best Effort)
+                    try {
+                        const res = await fetch('https://ipapi.co/json/');
+                        if (res.ok) {
+                            const data = await res.json();
+                            locationData = {
+                                ip: data.ip,
+                                city: data.city,
+                                region: data.region,
+                                country: data.country_name,
+                                timezone: data.timezone,
+                            };
+                        }
+                    } catch (e) {
+                        console.warn('Failed to fetch location data', e);
+                    }
+
+                    // 2. Capture Network Info
+                    if (typeof navigator !== 'undefined' && (navigator as any).connection) {
+                        networkType = (navigator as any).connection.effectiveType || 'unknown';
+                    }
+
+                    // 3. Prepare Metadata
+                    const metadata = {
+                        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+                        language: typeof navigator !== 'undefined' ? navigator.language : '',
+                        platform: typeof navigator !== 'undefined' ? navigator.platform : '',
+                        networkType,
+                        ...locationData
+                    };
+
                     const updateData: Partial<UserProfile> = {
                         email: currentUser.email,
                         displayName: currentUser.displayName,
                         photoURL: currentUser.photoURL,
                         lastLoginAt: serverTimestamp(),
                         environment: process.env.NEXT_PUBLIC_APP_ENV || 'development',
-                        metadata: {
-                            userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
-                            language: typeof navigator !== 'undefined' ? navigator.language : '',
-                            platform: typeof navigator !== 'undefined' ? navigator.platform : '',
-                        }
+                        metadata: metadata,
+                        loginCount: increment(1) as any,
                     };
 
                     // If new user (doc doesn't exist) or no status, set as pending
@@ -76,11 +112,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         updateData.onboardingStatus = 'pending';
                     }
 
-                    // Save/Update strictly to Firestore immediately to capture partial signup
+                    // 4. Update User Profile
                     await setDoc(userDocRef, updateData, { merge: true });
 
-                    // Update local state (merge with existing data)
-                    setUserProfile({ ...profileData, ...updateData });
+                    // 5. Log Event to 'login_events' collection
+                    try {
+                        await addDoc(collection(db, 'login_events'), {
+                            uid: currentUser.uid,
+                            timestamp: serverTimestamp(),
+                            type: 'login',
+                            environment: process.env.NEXT_PUBLIC_APP_ENV || 'development',
+                            ...metadata
+                        });
+                        console.log("Login event logged successfully");
+                    } catch (evtErr) {
+                        console.error("Failed to log login event (check Firestore rules):", evtErr);
+                    }
+
+                    // Update local state 
+                    // Note: We avoid merging Firestore sentinel objects (increment) into local state
+                    setUserProfile({ ...profileData, ...updateData, loginCount: (profileData.loginCount || 0) + 1 });
 
                     localStorage.setItem('getschool_user_uid', currentUser.uid);
                 } catch (error) {
