@@ -55,14 +55,20 @@ const Header: React.FC = () => {
           {isAuthenticated && user ? (
             <div className="relative group">
               <button className="flex items-center gap-2 focus:outline-none">
-                <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full border border-gray-200" />
-                <span className="text-sm font-medium text-slate-700 hidden lg:block">{user.name}</span>
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt={user.displayName || 'User'} className="w-8 h-8 rounded-full border border-gray-200" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                    {(user.displayName || user.email || 'U').charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span className="text-sm font-medium text-slate-700 hidden lg:block">{user.displayName || 'User'}</span>
               </button>
 
               {/* Dropdown */}
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right">
                 <div className="px-4 py-2 border-b border-gray-100">
-                  <p className="text-sm font-bold text-slate-900 truncate">{user.name}</p>
+                  <p className="text-sm font-bold text-slate-900 truncate">{user.displayName || 'User'}</p>
                   <p className="text-xs text-gray-500 truncate">{user.email}</p>
                 </div>
                 <Link href="/dashboard" className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-gray-50">

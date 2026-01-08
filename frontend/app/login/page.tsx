@@ -13,21 +13,20 @@ export default function LoginPage() {
     const [name, setName] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const { login } = useAuth();
+    const { loginWithGoogle } = useAuth();
     const router = useRouter();
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleGoogleLogin = async () => {
         setIsLoading(true);
-
-        // Simulate API call
-        setTimeout(() => {
-            // Use mock name if signing in with just email (simulate existing user)
-            const userName = name || email.split('@')[0];
-            login(email, userName);
-            setIsLoading(false);
+        try {
+            await loginWithGoogle();
             router.push('/dashboard');
-        }, 1000);
+        } catch (error) {
+            console.error("Login failed", error);
+            alert("Login failed. Please check your connection and try again.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -49,73 +48,25 @@ export default function LoginPage() {
                             </p>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            {isSignUp && (
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
-                                    <div className="relative">
-                                        <User className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                                        <input
-                                            type="text"
-                                            required={isSignUp}
-                                            value={name}
-                                            onChange={(e) => setName(e.target.value)}
-                                            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                            placeholder="John Doe"
-                                        />
-                                    </div>
-                                </div>
-                            )}
-
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
-                                <div className="relative">
-                                    <Mail className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                                    <input
-                                        type="email"
-                                        required
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                        placeholder="parent@example.com"
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
-                                <div className="relative">
-                                    <Lock className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                                    <input
-                                        type="password"
-                                        required
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                        placeholder="••••••••"
-                                    />
-                                </div>
-                                {!isSignUp && (
-                                    <div className="flex justify-end mt-1">
-                                        <a href="#" className="text-xs text-blue-600 hover:underline">Forgot password?</a>
-                                    </div>
-                                )}
-                            </div>
-
+                        <div className="space-y-4">
                             <button
-                                type="submit"
+                                onClick={handleGoogleLogin}
                                 disabled={isLoading}
-                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed mt-2"
+                                className="w-full bg-white border border-gray-300 hover:bg-gray-50 text-slate-700 font-bold py-3 rounded-lg shadow-sm transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                {isLoading ? (
-                                    <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                                ) : (
-                                    <>
-                                        {isSignUp ? 'Sign Up' : 'Sign In'} <ArrowRight className="w-5 h-5" />
-                                    </>
-                                )}
+                                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-6 h-6" alt="Google" />
+                                <span>Continue with Google</span>
                             </button>
-                        </form>
+
+                            <div className="relative my-6">
+                                <div className="absolute inset-0 flex items-center">
+                                    <div className="w-full border-t border-gray-200"></div>
+                                </div>
+                                <div className="relative flex justify-center text-sm">
+                                    <span className="px-2 bg-white text-gray-500">Email Login Coming Soon</span>
+                                </div>
+                            </div>
+                        </div>
 
                         <div className="mt-6 text-center">
                             <p className="text-sm text-slate-600">
