@@ -30,13 +30,20 @@ const Header: React.FC = () => {
         </Link>
 
         {/* Desktop Search - Hidden on Mobile */}
-        <div className="hidden md:flex flex-1 max-w-xl mx-8 relative">
-          <input
-            type="text"
-            placeholder="Search by School Name, Pin Code, or City..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
-          />
-          <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+        <div className="hidden md:flex flex-1 max-w-xl mx-8 relative items-center gap-2">
+          {process.env.NEXT_PUBLIC_APP_ENV !== 'production' && (
+            <span className="bg-yellow-100 text-yellow-800 text-xs font-bold px-2 py-0.5 rounded border border-yellow-200">
+              STAGING
+            </span>
+          )}
+          <div className="relative w-full">
+            <input
+              type="text"
+              placeholder="Search by School Name, Pin Code, or City..."
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+            />
+            <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+          </div>
         </div>
 
         {/* Actions */}
