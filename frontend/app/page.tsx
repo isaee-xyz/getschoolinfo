@@ -4,12 +4,12 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { DISTRICTS } from '@/constants';
-import { ShieldCheck, Database, GraduationCap, IndianRupee, Trophy, Building2 } from 'lucide-react';
+import { useLocations } from '@/hooks/useLocations';
 
 export default function Home() {
   const router = useRouter();
   const [selectedDistrict, setSelectedDistrict] = useState("");
+  const { districts, loading } = useLocations();
 
   const handleSearch = () => {
     router.push(`/search?district=${selectedDistrict}`);
@@ -44,9 +44,10 @@ export default function Home() {
                   className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={selectedDistrict}
                   onChange={(e) => setSelectedDistrict(e.target.value)}
+                  disabled={loading}
                 >
-                  <option value="">Select District</option>
-                  {DISTRICTS.map(d => (
+                  <option value="">{loading ? "Loading..." : "Select District"}</option>
+                  {districts.map(d => (
                     <option key={d} value={d}>{d}</option>
                   ))}
                 </select>

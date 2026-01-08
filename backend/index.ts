@@ -62,6 +62,29 @@ app.get('/api/school/:slug', async (req, res) => {
   }
 });
 
+// Config/Metadata Endpoint
+app.get('/api/config/locations', async (req, res) => {
+  try {
+    // Fetch unique districts and states efficiently
+    const result = await pool.query(`
+      SELECT DISTINCT district, state 
+      FROM schools 
+      WHERE district IS NOT NULL 
+      ORDER BY district ASC
+    `);
+
+    const locations = {
+      districts: [...new Set(result.rows.map(r => r.district))],
+      states: [...new Set(result.rows.map(r => r.state))]
+    };
+
+    res.json(locations);
+  } catch (err) {
+    console.error("Error fetching locations:", err);
+    res.status(500).json({ error: 'Failed to fetch location config' });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });

@@ -1,6 +1,8 @@
-import React from 'react';
+import { useLocations } from '@/hooks/useLocations';
 
 const Footer: React.FC = () => {
+  const { districts } = useLocations();
+
   return (
     <footer className="bg-slate-900 text-slate-400 py-12 mt-auto">
       <div className="container mx-auto px-4">
@@ -14,9 +16,10 @@ const Footer: React.FC = () => {
           <div>
             <h4 className="text-white font-semibold mb-4">Explore</h4>
             <ul className="space-y-2 text-sm">
-              <li><a href="#" className="hover:text-white">Search Schools</a></li>
-              <li><a href="#" className="hover:text-white">Compare Schools</a></li>
-              <li><a href="#" className="hover:text-white">Audit Reports</a></li>
+              <li><a href="/search" className="hover:text-white">All Schools</a></li>
+              {districts.slice(0, 5).map(d => (
+                <li key={d}><a href={`/search?district=${d}`} className="hover:text-white">Schools in {d}</a></li>
+              ))}
             </ul>
           </div>
           <div>
