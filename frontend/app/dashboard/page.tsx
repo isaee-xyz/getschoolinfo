@@ -13,7 +13,7 @@ import { Heart, BookOpen, Settings, LogOut, TrendingUp, Search } from 'lucide-re
 
 export default function DashboardPage() {
     const { shortlist, compareList } = useStore();
-    const { user, isAuthenticated, logout } = useAuth();
+    const { user, userProfile, isAuthenticated, logout } = useAuth();
     const router = useRouter();
 
     // Use MOCK_SCHOOLS to find full school objects from IDs
@@ -31,6 +31,8 @@ export default function DashboardPage() {
         return null; // Or a loading spinner
     }
 
+    const displayName = userProfile?.studentName || user?.displayName || (user?.email?.split('@')[0]) || 'Student';
+
     return (
         <>
             <Header />
@@ -42,12 +44,12 @@ export default function DashboardPage() {
                         <div className="flex flex-col md:flex-row items-center gap-6">
                             {/* Avatar fallback if user image is missing */}
                             <img
-                                src={user?.avatar || "https://ui-avatars.com/api/?name=" + (user?.name || "User") + "&background=random"}
-                                alt={user?.name}
+                                src={user?.photoURL || "https://ui-avatars.com/api/?name=" + (displayName) + "&background=random"}
+                                alt={displayName}
                                 className="w-20 h-20 rounded-full border-4 border-white/20"
                             />
                             <div className="flex-1 text-center md:text-left">
-                                <h1 className="text-3xl font-bold">Hello, {user?.name}!</h1>
+                                <h1 className="text-3xl font-bold">Hello, {displayName}!</h1>
                                 <p className="text-slate-300 mt-1">{user?.email}</p>
                             </div>
                             <div className="flex gap-3">
