@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useLocations } from '@/hooks/useLocations';
+import { ShieldCheck, Database, GraduationCap, IndianRupee, Trophy, Building2 } from 'lucide-react';
 
 export default function Home() {
   const router = useRouter();
   const [selectedDistrict, setSelectedDistrict] = useState("");
-  const { districts, loading } = useLocations();
+  const { districts, states, loading } = useLocations();
 
   const handleSearch = () => {
     router.push(`/search?district=${selectedDistrict}`);
@@ -20,7 +21,7 @@ export default function Home() {
       <Header />
       <main>
         {/* Hero Section */}
-        <section className="bg-gradient-to-b from-blue-50 to-white py-20 px-4">
+        <section className="bg-linear-to-b from-blue-50 to-white py-20 px-4">
           <div className="container mx-auto max-w-4xl text-center">
             <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6 leading-tight">
               Official Government-Verified Data for <span className="text-blue-600">15,000+ Schools</span>
@@ -33,10 +34,12 @@ export default function Home() {
               <div className="flex-1">
                 <select
                   className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  defaultValue="Punjab"
+                  defaultValue=""
                 >
-                  <option>Punjab</option>
-                  <option>Haryana</option>
+                  <option value="" disabled>Select State</option>
+                  {states.map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
                 </select>
               </div>
               <div className="flex-1">

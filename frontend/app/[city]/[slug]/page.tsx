@@ -10,7 +10,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 async function getSchool(slug: string): Promise<School | null> {
     try {
         const res = await fetch(`${API_URL}/school/${slug}`, {
-            next: { revalidate: 3600 } // ISR: Revalidate every hour
+            cache: 'no-store' // Ensure fresh data on every request
         });
 
         if (!res.ok) {

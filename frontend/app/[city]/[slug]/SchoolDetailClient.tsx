@@ -141,6 +141,10 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
     const isSaved = isInShortlist(school.id);
     const isComparing = isInCompare(school.id);
 
+    console.log("DEBUG SCHOOL DATA:", school);
+    console.log("District:", school.district);
+    console.log("Block:", school.block);
+
     const handleShortlist = () => {
         setAnimating(true);
         toggleShortlist(school.id);
@@ -162,21 +166,46 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
     };
 
     // --- Derivative Logic ---
-    const studentsPerClass = Math.round(school.rowTotal / (school.clsrmsGd || 1));
+    // --- Derivative Logic ---
+    // Prioritize pre-computed DB metrics if available (and valid > 0 to avoid div/0 for ratios)
+
+    // Students Per Classroom
+    const studentsPerClass = school.students_per_classroom
+        ? Math.round(school.students_per_classroom)
+        : Math.round(school.rowTotal / (school.clsrmsGd || 1));
+
     let crowdingStatus: 'green' | 'yellow' | 'red' = 'green';
     if (studentsPerClass > 45) crowdingStatus = 'red';
     else if (studentsPerClass > 35) crowdingStatus = 'yellow';
 
-    const ptr = Math.round(school.rowTotal / (school.totalTeacher || 1));
+    // Student Teacher Ratio (PTR)
+    const ptr = school.student_teacher_ratio
+        ? Math.round(school.student_teacher_ratio)
+        : Math.round(school.rowTotal / (school.totalTeacher || 1));
+
     let ptrStatus: 'green' | 'yellow' | 'red' = 'green';
     if (ptr > 40) ptrStatus = 'red';
     else if (ptr > 30) ptrStatus = 'yellow';
 
-    const gpt = Math.round(school.rowGirlTotal / (school.toiletgFun || 1)); // Girls per toilet
-    const bpt = Math.round((school.rowBoyTotal || 1) / (school.toiletbFun || 1)); // Boys per toilet
+    // Toilets: DB has "Toilets per 1000 Students". We show "1 Toilet : N Students".
+    // N = 1000 / ToiletsPer1000
+    const gpt = (school.girls_toilets_per_1000 && school.girls_toilets_per_1000 > 0)
+        ? Math.round(1000 / school.girls_toilets_per_1000)
+        : Math.round(school.rowGirlTotal / (school.toiletgFun || 1));
 
-    const trainingRate = school.totalTeacher > 0 ? Math.round(((school.tchRecvdServiceTrng || 0) / school.totalTeacher) * 100) : 0;
-    const daysPct = school.instructionalDays ? Math.round((school.instructionalDays / 220) * 100) : 0;
+    const bpt = (school.boys_toilets_per_1000 && school.boys_toilets_per_1000 > 0)
+        ? Math.round(1000 / school.boys_toilets_per_1000)
+        : Math.round((school.rowBoyTotal || 1) / (school.toiletbFun || 1));
+
+    // Training %
+    const trainingRate = school.teacher_training_pct
+        ? Math.round(school.teacher_training_pct)
+        : (school.totalTeacher > 0 ? Math.round(((school.tchRecvdServiceTrng || 0) / school.totalTeacher) * 100) : 0);
+
+    // Instructional Days % (DB stores %, we just strip decimals)
+    const daysPct = school.instructional_days_pct
+        ? Math.round(school.instructional_days_pct)
+        : (school.instructionalDays ? Math.round((school.instructionalDays / 220) * 100) : 0);
 
     const bbox = `${school.lng - 0.01},${school.lat - 0.01},${school.lng + 0.01},${school.lat + 0.01}`;
 
@@ -203,7 +232,12 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
                         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
                             <div className="flex-1">
                                 <div className="flex items-start gap-4 mb-4">
-                                    {school.image && <img src={school.image} alt="Logo" className="w-16 h-16 rounded-lg object-cover border border-gray-200 shadow-sm" />}
+                                    <img
+                                        src={school.image || '/default-school.jpg'}
+                                        alt="Logo"
+                                        className="w-16 h-16 rounded-lg object-cover border border-gray-200 shadow-sm"
+                                        onError={(e) => { (e.target as HTMLImageElement).src = '/default-school.jpg'; }}
+                                    />
                                     <div>
                                         <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 leading-tight mb-2">{school.name}</h1>
                                         <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -394,9 +428,25 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
                                 </AccordionSection>
                             ) : null}
 
-                            {/* Academic Performance - HIDDEN (No data available yet) */}
-                            {/* Gallery - HIDDEN (No real images available yet) */}
+                            {/* Academic Performance - Optional */}
+                            {school.board && (
+                                <AccordionSection title="Academic Performance" icon={<Trophy className="w-5 h-5 text-yellow-500" />} defaultOpen={false}>
+                                    <div className="p-4 bg-yellow-50 rounded-lg text-yellow-800 text-sm">
+                                        Performance data for {school.board} board exams will be available soon.
+                                    </div>
+                                </AccordionSection>
+                            )}
 
+                            {/* Gallery - Optional */}
+                            {school.images?.gallery && school.images.gallery.length > 0 && (
+                                <AccordionSection title="Campus Gallery" icon={<ImageIcon className="w-5 h-5 text-pink-500" />} defaultOpen={true}>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                        {school.images.gallery.map((img, idx) => (
+                                            <img key={idx} src={img} alt={`Gallery ${idx + 1}`} className="rounded-lg object-cover h-32 w-full hover:scale-105 transition-transform cursor-pointer" />
+                                        ))}
+                                    </div>
+                                </AccordionSection>
+                            )}
                         </div>
 
                         {/* Right Column: Contact & Location */}
@@ -413,12 +463,12 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
                                 <div className="p-4 space-y-4">
                                     <div className="flex items-start gap-3">
                                         <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold shrink-0">
-                                            {school.leadership.principal.name.charAt(0)}
+                                            {school.leadership?.principal?.name?.charAt(0) || "P"}
                                         </div>
                                         <div>
                                             <p className="text-xs text-gray-500 uppercase font-bold">Principal</p>
-                                            <p className="text-sm font-bold text-slate-800">{school.leadership.principal.name}</p>
-                                            {school.leadership.principal.email && <p className="text-xs text-blue-600 truncate">{school.leadership.principal.email.toLowerCase()}</p>}
+                                            <p className="text-sm font-bold text-slate-800">{school.leadership?.principal?.name || "Not Available"}</p>
+                                            {school.leadership?.principal?.email && <p className="text-xs text-blue-600 truncate">{school.leadership.principal.email.toLowerCase()}</p>}
                                         </div>
                                     </div>
 
@@ -426,7 +476,7 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
                                         <p className="text-xs text-gray-500 uppercase font-bold mb-2">Committees</p>
                                         <div className="bg-gray-50 p-2 rounded text-xs text-slate-700">
                                             <span className="font-semibold block">Sexual Harassment Committee:</span>
-                                            {school.leadership.sexualHarassmentCommitteeHead.name} ({school.leadership.sexualHarassmentCommitteeHead.contactNumber})
+                                            {school.leadership?.sexualHarassmentCommitteeHead?.name || "N/A"} ({school.leadership?.sexualHarassmentCommitteeHead?.contactNumber || "N/A"})
                                         </div>
                                     </div>
                                 </div>
@@ -470,13 +520,13 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
                             <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
                                 <h3 className="font-bold text-slate-900 mb-4">Contact Details</h3>
                                 <ul className="space-y-3 text-sm">
-                                    {school.leadership.principal.contactNumber && (
+                                    {school.leadership?.principal?.contactNumber && (
                                         <li className="flex items-center gap-3">
                                             <Phone className="w-4 h-4 text-gray-400" />
                                             <span className="text-slate-700">{school.leadership.principal.contactNumber}</span>
                                         </li>
                                     )}
-                                    {school.leadership.principal.email && (
+                                    {school.leadership?.principal?.email && (
                                         <li className="flex items-center gap-3">
                                             <Mail className="w-4 h-4 text-gray-400" />
                                             <span className="text-slate-700 truncate">{school.leadership.principal.email.toLowerCase()}</span>

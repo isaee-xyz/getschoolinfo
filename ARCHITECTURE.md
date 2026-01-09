@@ -53,11 +53,18 @@ The frontend is the critical layer for SEO and User Experience.
 While Next.js handles reads, the Express backend manages write-heavy or complex logic.
 *   **API Gateway**: `server.ts` exposes REST endpoints protected by CORS and Rate Limiting.
 *   **PostgreSQL**:
-    *   **Schema**: Optimized for filtering.
-    *   **Indexes**: Composite indexes on `(district, tuition_fee)`, `pincode`, etc., for fast search queries.
+    *   **Staging vs. Production**:
+        *   **Separation**: completely separate database instances (e.g., `school_db_staging` vs `school_db_prod`).
+        *   **Parity**: Schema is identical. Migrations run on Staging first.
+        *   **Data**: Staging has subset/seed data (e.g., Bathinda only). Production has full dataset.
     *   **Data Model**:
-        *   `schools`: Core table with 50+ columns (JSONB for loose data like fee structures).
-*   **Seeding**: Custom `seed.ts` script transforms raw JSON datasets (like `BATHIDNA.json`) into structured SQL rows.
+        *   **Direct Data (`schools`)**: The "Source of Truth". Normalized, containing every raw field (50+ columns).
+            *   *Purpose*: Detailed Profile Pages, Admin Editing, Audits.
+        *   **Derivative Data (`school_search_index`)**: Flattened, high-performance table.
+            *   *Purpose*: Search, Filters, List Views, Map Markers.
+            *   *Feature*: Contains pre-computed "Badges" (e.g., `value_for_money`), "Location Strings", and flattened boolean flags.
+        *   **SEO Data**: Implicitly derived from `schools` (slugs, names, locations) or stored in `search_index` for sitemap generation.
+    *   **Seeding**: Custom `seed.ts` script transforms raw JSON datasets (like `BATHIDNA.json`) into structured SQL rows.
 
 ### D. Authentication & User Data (Firebase)
 *   **Auth**: Firebase Authentication (Google Sign-In, OTP).

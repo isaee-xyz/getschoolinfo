@@ -16,10 +16,12 @@ interface SchoolListProps {
 
 export default function SchoolList({ initialFilters, title, subtitle, schools = MOCK_SCHOOLS }: SchoolListProps) {
     const [showMobileFilters, setShowMobileFilters] = useState(false);
-    const [visibleCount, setVisibleCount] = useState(12);
+    const [visibleCount, setVisibleCount] = useState(10);
 
     const [filters, setFilters] = useState<FilterState>({
         location: initialFilters?.location || '',
+        district: initialFilters?.district || (!initialFilters?.location ? 'Bathinda' : ''), // Default to Bathinda as requested
+        blocks: initialFilters?.blocks || [],
         maxFee: initialFilters?.maxFee || 200000,
         board: initialFilters?.board || [],
         grade: initialFilters?.grade || '',
@@ -33,7 +35,7 @@ export default function SchoolList({ initialFilters, title, subtitle, schools = 
 
     const filteredSchools = useMemo(() => {
         return schools.filter(school => {
-            // Location Filter
+            // Location Filter (Legacy & Search Text)
             if (filters.location) {
                 const search = filters.location.toLowerCase();
                 const matchesLoc =
@@ -41,6 +43,17 @@ export default function SchoolList({ initialFilters, title, subtitle, schools = 
                     school.name.toLowerCase().includes(search) ||
                     school.pincode.includes(search);
                 if (!matchesLoc) return false;
+            }
+
+            // Explicit District Filter (Dropdown)
+            // If user selected a district in sidebar, match it exactly.
+            if (filters.district) {
+                if (school.district.toLowerCase() !== filters.district.toLowerCase()) return false;
+            }
+
+            // Block Filter (Multi-select)
+            if (filters.blocks && filters.blocks.length > 0) {
+                if (!filters.blocks.includes(school.block)) return false;
             }
 
             // Budget
@@ -146,6 +159,8 @@ export default function SchoolList({ initialFilters, title, subtitle, schools = 
                                 <button
                                     onClick={() => setFilters({
                                         location: '',
+                                        district: '',
+                                        blocks: [],
                                         maxFee: 200000,
                                         board: [],
                                         grade: '',

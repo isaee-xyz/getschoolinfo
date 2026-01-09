@@ -108,11 +108,64 @@ export interface School {
   annualMonthlyOtherCharges: number;
 
   leadership: Leadership;
-  principalName: string; // Legacy field
+  principalName?: string; // Legacy
+
+  // New Mapped Fields
+  board?: string; // "1-CBSE" etc
+  studentBoys?: number;
+  studentGirls?: number;
+
+  infraDetails?: {
+    classrooms_good: number;
+    classrooms_major_repair: number;
+    smart_boards: number;
+    projectors: number;
+    computers: number;
+    toilets_boys: number;
+    toilets_girls: number;
+    drinking_water: boolean;
+    electricity: boolean;
+    library: boolean;
+    playground: boolean;
+  };
+
+  teacherDetails?: {
+    total: number;
+    regular: number;
+    contract: number;
+    graduate_above: number;
+    post_graduate_above: number;
+    trained: number;
+  };
+
+  images?: {
+    main: string | null;
+    gallery: string[];
+  };
+
+  // Derivative Data (from school_search_index)
+  badge_academic_elite?: boolean;
+  badge_value_for_money?: boolean;
+  location_string?: string;
+  optimized_tuition_fee?: number;
+
+  // Derived Metrics (Optional because they come from school_stats, not raw)
+  student_teacher_ratio?: number;
+  gender_parity_index?: number;
+  bed_qualification_pct?: number;
+  regular_teacher_pct?: number;
+  students_per_classroom?: number;
+  girls_toilets_per_1000?: number;
+  boys_toilets_per_1000?: number;
+  teacher_training_pct?: number;
+  instructional_days_pct?: number;
+  furniture_availability_pct?: number;
 }
 
 export interface FilterState {
-  location: string;
+  location: string; // Keep for search text legacy
+  district: string; // New Dropdown
+  blocks: string[]; // New Multi-select
   maxFee: number;
   board: string[];
   grade: string;
@@ -120,6 +173,6 @@ export interface FilterState {
   qualifiedStaff: boolean;
   securePerimeter: boolean;
   disabilityFriendly: boolean;
-  rteCompliant: boolean; // New
-  genderBalanced: boolean; // New
+  rteCompliant: boolean;
+  genderBalanced: boolean;
 }

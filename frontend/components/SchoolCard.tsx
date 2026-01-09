@@ -16,56 +16,79 @@ const SchoolCard: React.FC<SchoolCardProps> = ({ school }) => {
   const isComparing = isInCompare(school.id);
 
   // --- Derivative Metric Calculations ---
+  // The API (school_stats table) provides pre-calculated snake_case metrics.
+  // We prioritize those, falling back to on-the-fly calc for backward compat.
+  // IMPORTANT: All percentages and ratios must be rounded to Integers for UI.
 
   // 1. Student-Teacher Ratio (Benchmark <= 30)
-  const str = school.totalTeacher > 0 ? Math.round(school.rowTotal / school.totalTeacher) : 0;
-  const isStrGood = str <= 30;
+  const strRaw = school.student_teacher_ratio ?? (school.totalTeacher > 0 ? school.rowTotal / school.totalTeacher : 0);
+  const str = Math.round(strRaw);
+  const isStrGood = str > 0 && str <= 30;
 
-  // 2. Gender Parity Index (Benchmark 0.97 - 1.03)
-  const gpi = (school.rowBoyTotal && school.rowBoyTotal > 0)
-    ? (school.rowGirlTotal / school.rowBoyTotal).toFixed(2)
-    : "NA";
-  const isGpiGood = gpi !== "NA" && parseFloat(gpi) >= 0.90 && parseFloat(gpi) <= 1.10; // Loosened slightly for UI
+  // 2. Gender Parity Index (Benchmark 0.97 - 1.03) -> Keep decimals for GPI (index, not %)
+  const gpiValue = school.gender_parity_index ||
+    ((school.rowBoyTotal && school.rowBoyTotal > 0) ? (school.rowGirlTotal / school.rowBoyTotal) : 0);
+  const isGpiGood = gpiValue >= 0.90 && gpiValue <= 1.10;
 
   // 3. B.Ed Qualification % (Benchmark 100%)
-  const bedPct = school.totalTeacher > 0
-    ? Math.round(((school.profQual3 || 0) / school.totalTeacher) * 100)
-    : 0;
+  const bedPctRaw = school.bed_qualification_pct ?? (
+    school.totalTeacher > 0 ? ((school.profQual3 || 0) / school.totalTeacher) * 100 : 0
+  );
+  const bedPct = Math.round(bedPctRaw);
 
   // 4. Regular Teacher % (Benchmark > 80%)
-  const regTeacherPct = school.totalTeacher > 0
-    ? Math.round((school.tchReg / school.totalTeacher) * 100)
-    : 0;
+  const regTeacherPctRaw = school.regular_teacher_pct ?? (
+    school.totalTeacher > 0 ? (school.tchReg / school.totalTeacher) * 100 : 0
+  );
+  const regTeacherPct = Math.round(regTeacherPctRaw);
 
   // 5. Students Per Classroom (Benchmark 25-35)
-  const classroomDensity = school.clsrmsGd > 0
-    ? Math.round(school.rowTotal / school.clsrmsGd)
-    : 0;
+  const densityRaw = school.students_per_classroom ?? (
+    school.clsrmsGd > 0 ? school.rowTotal / school.clsrmsGd : 0
+  );
+  const classroomDensity = Math.round(densityRaw);
   const isDensityGood = classroomDensity <= 40;
 
   // 6. Girls Toilets Per 1000 (Benchmark >= 25)
-  const girlToiletsRatio = school.rowGirlTotal > 0
-    ? Math.round((school.toiletgFun / school.rowGirlTotal) * 1000)
-    : 0;
-  const isHygineGood = girlToiletsRatio >= 20; // 1 per 50 students approx
+  const girlToiletsRaw = school.girls_toilets_per_1000 ?? (
+    school.rowGirlTotal > 0 ? (school.toiletgFun / school.rowGirlTotal) * 1000 : 0
+  );
+  const girlToiletsRatio = Math.round(girlToiletsRaw);
+  const isHygineGood = girlToiletsRatio >= 20;
 
   // 7. Furniture Availability (Benchmark 100%)
-  const furniturePct = school.rowTotal > 0
-    ? Math.round(((school.stusHvFurnt || 0) / school.rowTotal) * 100)
-    : 0;
+  const furniturePctRaw = school.furniture_availability_pct ?? (
+    school.rowTotal > 0 ? ((school.stusHvFurnt || 0) / school.rowTotal) * 100 : 0
+  );
+  const furniturePct = Math.round(furniturePctRaw);
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-300 flex flex-col md:flex-row relative">
       {/* Thumbnail */}
-      <div className="md:w-56 h-48 md:h-auto relative shrink-0">
+      <div className="md:w-56 h-48 md:h-auto relative shrink-0 overflow-hidden bg-gray-100">
         <img
-          src={school.image}
+          src={school.image || '/default-school.jpg'}
           alt={school.name}
           className="w-full h-full object-cover"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = '/default-school.jpg';
+          }}
         />
-        <div className="absolute top-2 left-2 bg-green-100 text-green-800 text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm">
-          <CheckCircle className="w-3 h-3" />
-          {school.schoolStatusName}
+        <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
+          <div className="bg-green-100 text-green-800 text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm">
+            <CheckCircle className="w-3 h-3" />
+            {school.schoolStatusName}
+          </div>
+          {school.badge_value_for_money && (
+            <div className="bg-purple-100 text-purple-800 text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm border border-purple-200">
+              💰 Best Value
+            </div>
+          )}
+          {school.badge_academic_elite && (
+            <div className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm border border-blue-200">
+              🎓 Academic Elite
+            </div>
+          )}
         </div>
       </div>
 

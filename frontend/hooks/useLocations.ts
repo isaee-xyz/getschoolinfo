@@ -9,10 +9,12 @@ export function useLocations() {
     const [states, setStates] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const [blocks, setBlocks] = useState<string[]>([]);
+
     useEffect(() => {
         const fetchLocations = async () => {
             try {
-                const res = await fetch(`${API_URL}/api/config/locations`);
+                const res = await fetch(`${API_URL}/config/locations`);
                 if (res.ok) {
                     const data = await res.json();
                     setDistricts(data.districts || []);
@@ -28,5 +30,21 @@ export function useLocations() {
         fetchLocations();
     }, []);
 
-    return { districts, states, loading };
+    const fetchBlocks = async (district: string) => {
+        if (!district) {
+            setBlocks([]);
+            return;
+        }
+        try {
+            const res = await fetch(`${API_URL}/config/locations?district=${encodeURIComponent(district)}`);
+            if (res.ok) {
+                const data = await res.json();
+                setBlocks(data.blocks || []);
+            }
+        } catch (error) {
+            console.error("Failed to fetch blocks:", error);
+        }
+    };
+
+    return { districts, states, blocks, fetchBlocks, loading };
 }

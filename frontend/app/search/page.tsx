@@ -15,9 +15,20 @@ function SearchContent() {
     React.useEffect(() => {
         const fetchSchools = async () => {
             try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/schools`);
+                // Construct query string from search params
+                const params = new URLSearchParams();
+                if (districtParam) params.append('district', districtParam);
+
+                // Add support for state and search if they exist in URL
+                const stateParam = searchParams.get('state');
+                const queryParam = searchParams.get('search');
+                if (stateParam) params.append('state', stateParam);
+                if (queryParam) params.append('search', queryParam);
+
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/schools?${params.toString()}`);
                 if (!res.ok) throw new Error('Failed to fetch');
                 const data = await res.json();
+                setSchools(data);
                 setSchools(data);
             } catch (err) {
                 console.error("Error fetching schools:", err);
@@ -35,7 +46,7 @@ function SearchContent() {
 
     return (
         <SchoolList
-            initialFilters={{ location: districtParam }}
+            initialFilters={{ district: districtParam, location: '' }}
             title={districtParam ? `Schools in ${districtParam}` : undefined}
             schools={schools}
         />
