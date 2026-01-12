@@ -21,6 +21,7 @@ export default function SchoolList({ initialFilters, title, subtitle, schools = 
     const [filters, setFilters] = useState<FilterState>({
         location: initialFilters?.location || '',
         district: initialFilters?.district || '',
+        state: initialFilters?.state || '',
         blocks: initialFilters?.blocks || [],
         maxFee: initialFilters?.maxFee || 200000,
         board: initialFilters?.board || [],
@@ -167,6 +168,7 @@ export default function SchoolList({ initialFilters, title, subtitle, schools = 
                                     onClick={() => setFilters({
                                         location: '',
                                         district: '',
+                                        state: '',
                                         blocks: [],
                                         maxFee: 200000,
                                         board: [],
