@@ -7,11 +7,15 @@ import { MOCK_SCHOOLS } from '@/constants';
 
 // --- Static Generation Configuration (ISR) ---
 
+export const dynamic = 'force-dynamic';
+
+/*
 export async function generateStaticParams() {
     // Top Boards to pre-render
     const boards = ['cbse', 'icse', 'state-board', 'ib', 'cambridge'];
     return boards.map((board) => ({ board }));
 }
+*/
 
 export const revalidate = 86400; // Daily updates
 
