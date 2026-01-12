@@ -50,7 +50,7 @@ export default function Home() {
                   disabled={loading}
                 >
                   <option value="">{loading ? "Loading..." : "Select District"}</option>
-                  {districts.map(d => (
+                  {Array.from(new Set(districts.map(d => d.name))).map(d => (
                     <option key={d} value={d}>{d}</option>
                   ))}
                 </select>

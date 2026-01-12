@@ -47,7 +47,7 @@ const Footer: React.FC = () => {
             </h4>
             <div className="h-auto overflow-visible">
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 gap-y-2">
-                {districts.map(d => (
+                {Array.from(new Set(districts.map(d => d.name))).map(d => (
                   <a
                     key={d}
                     href={`/search?district=${encodeURIComponent(d)}`}
