@@ -9,6 +9,7 @@ import { MOCK_SCHOOLS } from '@/constants';
 
 // This ensures these paths are built at build time (or on demand if fallback is true)
 // reducing server load to ZERO for subsequent requests.
+/*
 export async function generateStaticParams() {
     // In production, fetch this list from DB: SELECT distinct district FROM schools
     const districts = Array.from(new Set(MOCK_SCHOOLS.map(s => s.district))).filter(Boolean);
@@ -18,9 +19,11 @@ export async function generateStaticParams() {
         city: city.toLowerCase().replace(/\s+/g, '-')
     }));
 }
+*/
+export const dynamic = 'force-dynamic';
 
 // ISR Revalidation: Update these pages at most once per day
-export const revalidate = 86400;
+export const revalidate = 0;
 
 // --- Metadata ---
 

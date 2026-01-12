@@ -13,7 +13,7 @@ fi
 
 echo "🚀 Connecting to $TARGET_IP to set up Docker and Nginx..."
 
-ssh -o StrictHostKeyChecking=no "$USER@$TARGET_IP" << 'EOF'
+ssh -i ~/.ssh/id_ed25519_howtohelp -o StrictHostKeyChecking=no "$USER@$TARGET_IP" << 'EOF'
   set -e
 
   echo "Updating system..."

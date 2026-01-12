@@ -1,3 +1,5 @@
+"use client";
+
 import { useLocations } from '@/hooks/useLocations';
 
 const Footer: React.FC = () => {

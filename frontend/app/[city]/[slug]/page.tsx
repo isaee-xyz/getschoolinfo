@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation';
 import SchoolDetailClient from './SchoolDetailClient';
 import { School } from '@/types';
 
+export const dynamic = 'force-dynamic';
+
 // Fallback for build time or if env not set
 // Fallback for build time or if env not set
 const API_URL = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';

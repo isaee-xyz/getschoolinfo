@@ -18,17 +18,21 @@ echo "🚀 Deploying to $TARGET_IP..."
 # Copy Data File if present locally
 if [ -f "All District Data.json" ]; then
     echo "Transferring data file..."
-    scp "All District Data.json" "$USER@$TARGET_IP:/root/"
+    scp -i ~/.ssh/id_ed25519_howtohelp "All District Data.json" "$USER@$TARGET_IP:/root/"
 fi
 
-# Create remote env file content
-# NOTE: In a real scenario, you'd use a secure vault or pass this securely. 
-# For now, we generate a basic one or ask user to edit it.
-read -p "Enter Database Password for Production: " DB_PASSWORD
+# Check for DB_PASSWORD env var or arg
+if [ -z "$DB_PASSWORD" ]; then
+    if [ ! -z "$2" ]; then
+        DB_PASSWORD="$2"
+    else
+        echo "Auto-generating database password..."
+        DB_PASSWORD=$(openssl rand -base64 16)
+    fi
+fi
 
-ssh -o StrictHostKeyChecking=no "$USER@$TARGET_IP" << EOF
+ssh -i ~/.ssh/id_ed25519_howtohelp -o StrictHostKeyChecking=no "$USER@$TARGET_IP" << EOF
   set -e
-
   # Clone or Pull
   if [ -d "$PROJECT_DIR" ]; then
       cd $PROJECT_DIR
@@ -37,6 +41,17 @@ ssh -o StrictHostKeyChecking=no "$USER@$TARGET_IP" << EOF
       git clone $REPO_URL
       cd $PROJECT_DIR
   fi
+EOF
+
+# Copy Secrets
+if [ -f "backend/service-account.json" ]; then
+    echo "Transferring service account..."
+    scp -i ~/.ssh/id_ed25519_howtohelp "backend/service-account.json" "$USER@$TARGET_IP:/root/$PROJECT_DIR/backend/"
+fi
+
+ssh -i ~/.ssh/id_ed25519_howtohelp -o StrictHostKeyChecking=no "$USER@$TARGET_IP" << EOF
+  cd $PROJECT_DIR
+
 
   # Create .env
   cat > .env << ENV
