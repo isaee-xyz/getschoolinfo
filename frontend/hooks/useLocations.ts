@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export function useLocations() {
-    const [districts, setDistricts] = useState<string[]>([]);
+    const [districts, setDistricts] = useState<{ name: string; state: string }[]>([]);
     const [states, setStates] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -17,7 +17,12 @@ export function useLocations() {
                 const res = await fetch(`${API_URL}/config/locations`);
                 if (res.ok) {
                     const data = await res.json();
-                    setDistricts(data.districts || []);
+                    // Handle both legacy (string[]) and new ({name, state}[]) formats for safety
+                    const rawDistricts = data.districts || [];
+                    const formattedDistricts = rawDistricts.map((d: any) =>
+                        typeof d === 'string' ? { name: d, state: '' } : d
+                    );
+                    setDistricts(formattedDistricts);
                     setStates(data.states || []);
                 }
             } catch (error) {

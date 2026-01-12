@@ -66,10 +66,10 @@ const transformSchool = (s: any) => {
     block: s.block || s.blockName || raw.blockName || raw.block,
     state: s.state || s.stateName || raw.stateName || raw.state,
     pincode: s.pincode || raw.pincode,
-    latitude: s.latitude || raw.latitude,
-    longitude: s.longitude || raw.longitude,
-    lat: s.latitude || raw.latitude, // Frontend expects 'lat'
-    lng: s.longitude || raw.longitude, // Frontend expects 'lng'
+    latitude: Number(s.latitude || raw.latitude),
+    longitude: Number(s.longitude || raw.longitude),
+    lat: Number(s.latitude || raw.latitude), // Frontend expects 'lat'
+    lng: Number(s.longitude || raw.longitude), // Frontend expects 'lng'
 
     // Classification
     boardSecName: board,
@@ -377,8 +377,8 @@ app.get('/api/config/locations', async (req, res) => {
     `);
 
     const locations = {
-      districts: [...new Set(result.rows.map(r => r.district))],
-      states: [...new Set(result.rows.map(r => r.state))]
+      districts: result.rows.map(r => ({ name: r.district, state: r.state })),
+      states: [...new Set(result.rows.map(r => r.state))].sort()
     };
 
     res.json(locations);

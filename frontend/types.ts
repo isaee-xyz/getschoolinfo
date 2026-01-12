@@ -164,6 +164,7 @@ export interface School {
 
 export interface FilterState {
   location: string; // Keep for search text legacy
+  state: string; // New State Dropdown
   district: string; // New Dropdown
   blocks: string[]; // New Multi-select
   maxFee: number;

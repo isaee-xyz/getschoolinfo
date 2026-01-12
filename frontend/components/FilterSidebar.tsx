@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { FilterState } from '../types';
-import { SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal, ChevronDown, Search, X } from 'lucide-react';
 import { useLocations } from '../hooks/useLocations';
-
 import { useRouter, useSearchParams } from 'next/navigation';
 
 interface FilterSidebarProps {
@@ -13,90 +12,132 @@ interface FilterSidebarProps {
 }
 
 const FilterSidebar: React.FC<FilterSidebarProps> = ({ filters, setFilters }) => {
-  const { districts, blocks, fetchBlocks } = useLocations();
+  const { districts, states, blocks, fetchBlocks } = useLocations();
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Local state for Searchable Dropdown
+  const [districtSearch, setDistrictSearch] = useState("");
+  const [isDistrictOpen, setIsDistrictOpen] = useState(false);
+  const districtDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (districtDropdownRef.current && !districtDropdownRef.current.contains(event.target as Node)) {
+        setIsDistrictOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Fetch blocks when district changes
   useEffect(() => {
     if (filters.district) {
       fetchBlocks(filters.district);
     } else {
-      // Clear blocks if no district is selected
       if (filters.blocks && filters.blocks.length > 0) {
         setFilters(prev => ({ ...prev, blocks: [] }));
       }
     }
   }, [filters.district]);
 
-  // Auto-select all blocks when they define/change (and we have a district)
-  // Check if we already have blocks selected to avoid overriding user un-selection
-  // For now, let's auto-select only if the blocks list changes and is non-empty, 
-  // ensuring we populate the initial view.
-  // Auto-select all blocks when they define/change (and we have a district)
+  // Logic: Auto-select State when District is chosen
   useEffect(() => {
-    // 1. Normalize District Case: URL might be 'bhopal', DB might be 'BHOPAL'
-    if (districts.length > 0 && filters.district) {
-      const match = districts.find(d => d.toLowerCase() === filters.district.toLowerCase());
-      if (match && match !== filters.district) {
-        setFilters(prev => ({ ...prev, district: match }));
+    if (filters.district && districts.length > 0) {
+      const match = districts.find(d => d.name.toLowerCase() === filters.district.toLowerCase());
+
+      // Auto-select State if not already selected or different
+      if (match && match.state && filters.state !== match.state) {
+        setFilters(prev => ({ ...prev, state: match.state }));
       }
     }
+  }, [filters.district, districts]);
 
-    // 2. Auto-select blocks
-    // Whenever the available 'blocks' list updates (due to district change),
-    // automatically select ALL of them.
+  // Logic: Filter Districts based on Selected State
+  const filteredDistricts = useMemo(() => {
+    let d = districts;
+
+    // 1. Filter by State
+    if (filters.state) {
+      d = d.filter(item => item.state === filters.state);
+    }
+
+    // 2. Filter by Search Text (in dropdown)
+    if (districtSearch) {
+      d = d.filter(item => item.name.toLowerCase().includes(districtSearch.toLowerCase()));
+    }
+
+    // 3. Sort Alphabetically
+    return d.sort((a, b) => a.name.localeCompare(b.name));
+  }, [districts, filters.state, districtSearch]);
+
+
+  // Auto-select all blocks when available
+  useEffect(() => {
     if (filters.district && blocks.length > 0) {
       setFilters(prev => ({ ...prev, blocks: blocks }));
     }
-  }, [blocks, districts, filters.district]);
+  }, [blocks, filters.district]);
 
+
+  // Handlers
   const handleCheckboxChange = (key: keyof FilterState) => {
-    // @ts-ignore - simple toggle for boolean keys
+    // @ts-ignore
     setFilters(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handleStateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newState = e.target.value;
+    setFilters(prev => ({ ...prev, state: newState, district: '', blocks: [] })); // Reset district when state changes
+    updateUrl({ state: newState, district: '' });
+  };
+
+  const handleDistrictSelect = (districtName: string) => {
+    setFilters(prev => ({ ...prev, district: districtName, blocks: [] }));
+    setDistrictSearch(""); // Reset search
+    setIsDistrictOpen(false); // Close dropdown
+    updateUrl({ district: districtName });
+  };
+
+  const clearDistrict = () => {
+    setFilters(prev => ({ ...prev, district: '', blocks: [] }));
+    setDistrictSearch("");
+    updateUrl({ district: '' });
+  };
+
+  const updateUrl = (updates: Partial<Record<string, string>>) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value) {
+        params.set(key, value);
+      } else {
+        params.delete(key);
+      }
+    });
+
+    router.push(`/search?${params.toString()}`);
   };
 
   const handleBlockToggle = (block: string) => {
     setFilters(prev => {
       const currentBlocks = prev.blocks || [];
-      if (currentBlocks.includes(block)) {
-        return { ...prev, blocks: currentBlocks.filter(b => b !== block) };
-      } else {
-        return { ...prev, blocks: [...currentBlocks, block] };
-      }
+      return currentBlocks.includes(block)
+        ? { ...prev, blocks: currentBlocks.filter(b => b !== block) }
+        : { ...prev, blocks: [...currentBlocks, block] };
     });
   };
 
   const toggleAllBlocks = () => {
     setFilters(prev => {
       const allSelected = blocks.every(b => prev.blocks?.includes(b));
-      if (allSelected) {
-        return { ...prev, blocks: [] };
-      } else {
-        return { ...prev, blocks: [...blocks] };
-      }
+      return { ...prev, blocks: allSelected ? [] : [...blocks] };
     });
   };
 
   const isAllBlocksSelected = blocks.length > 0 && blocks.every(b => filters.blocks?.includes(b));
-
-  const handleDistrictChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newDistrict = e.target.value;
-
-    // Update local state (immediate UI feedback)
-    setFilters(prev => ({ ...prev, district: newDistrict, blocks: [] }));
-
-    // Update URL to trigger server-side fetch
-    const currentFilter = searchParams.get('filter');
-    const params = new URLSearchParams();
-
-    // Always set district param, even if empty (to override default)
-    params.set('district', newDistrict);
-
-    if (currentFilter) params.set('filter', currentFilter); // Preserve sort/filter mode
-
-    router.push(`/search?${params.toString()}`);
-  };
 
   return (
     <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm sticky top-24">
@@ -107,22 +148,93 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ filters, setFilters }) =>
 
       <div className="space-y-6">
         {/* Location Filters */}
-        <div className="pb-4 border-b border-gray-100">
+        <div className="pb-4 border-b border-gray-100 space-y-4">
           <h3 className="text-xs uppercase tracking-wider text-gray-500 font-bold mb-3">Location</h3>
 
-          {/* District Select */}
-          <div className="mb-4">
+          {/* State Filter */}
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">State</label>
+            <div className="relative">
+              <select
+                value={filters.state || ''}
+                onChange={handleStateChange}
+                className="w-full text-sm p-2 pr-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none bg-white"
+              >
+                <option value="">All States</option>
+                {states.sort().map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-2.5 w-4 h-4 text-gray-500 pointer-events-none" />
+            </div>
+          </div>
+
+          {/* Searchable District Dropdown */}
+          <div ref={districtDropdownRef} className="relative">
             <label className="block text-sm font-semibold text-slate-700 mb-1">District</label>
-            <select
-              value={filters.district}
-              onChange={handleDistrictChange}
-              className="w-full text-sm p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+
+            {/* Trigger / Input */}
+            <div
+              className="relative w-full border border-gray-300 rounded-lg bg-white cursor-pointer hover:border-blue-400"
+              onClick={() => setIsDistrictOpen(!isDistrictOpen)}
             >
-              <option value="">All Districts</option>
-              {districts.map((d: string) => (
-                <option key={d} value={d}>{d}</option>
-              ))}
-            </select>
+              <div className="flex items-center justify-between p-2">
+                <span className={`text-sm ${filters.district ? 'text-slate-900 font-medium' : 'text-gray-500'}`}>
+                  {filters.district || "Select District"}
+                </span>
+                <div className="flex items-center gap-1">
+                  {filters.district && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); clearDistrict(); }}
+                      className="p-1 hover:bg-gray-100 rounded-full"
+                    >
+                      <X className="w-3 h-3 text-gray-500" />
+                    </button>
+                  )}
+                  <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isDistrictOpen ? 'rotate-180' : ''}`} />
+                </div>
+              </div>
+            </div>
+
+            {/* Dropdown Menu */}
+            {isDistrictOpen && (
+              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 flex flex-col">
+                {/* Search Input */}
+                <div className="p-2 border-b border-gray-100">
+                  <div className="relative">
+                    <Search className="absolute left-2 top-2.5 w-3.5 h-3.5 text-gray-400" />
+                    <input
+                      type="text"
+                      className="w-full pl-8 pr-2 py-1.5 text-sm border border-gray-200 rounded focus:border-blue-500 outline-none"
+                      placeholder="Search..."
+                      value={districtSearch}
+                      onChange={(e) => setDistrictSearch(e.target.value)}
+                      onClick={(e) => e.stopPropagation()} // Prevent closing
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
+                {/* List */}
+                <div className="overflow-y-auto flex-1">
+                  {filteredDistricts.length === 0 ? (
+                    <div className="p-3 text-sm text-gray-500 text-center">No districts found</div>
+                  ) : (
+                    filteredDistricts.map((d) => (
+                      <div
+                        key={d.name}
+                        onClick={() => handleDistrictSelect(d.name)}
+                        className={`px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 flex justify-between items-center ${filters.district === d.name ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'}`}
+                      >
+                        {d.name}
+                        {/* Optional: Show state name if state filter not active to help disambiguate */}
+                        {!filters.state && <span className="text-[10px] text-gray-400">{d.state}</span>}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Block Multi-Select */}
@@ -130,8 +242,8 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ filters, setFilters }) =>
             <div>
               <label className="text-sm font-semibold text-slate-700 mb-2 block">Blocks</label>
 
-              <div className="max-h-40 overflow-y-auto space-y-2 border border-gray-100 p-2 rounded bg-gray-50">
-                {/* Select All Option */}
+              <div className="max-h-40 overflow-y-auto space-y-2 border border-gray-100 p-2 rounded bg-gray-50 custom-scrollbar">
+                {/* Select All */}
                 <label className="flex items-center gap-2 cursor-pointer pb-2 border-b border-gray-200">
                   <input
                     type="checkbox"
@@ -178,7 +290,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ filters, setFilters }) =>
           </div>
         </div>
 
-        {/* RTE & Policy Benchmarks (New) */}
+        {/* RTE & Policy Benchmarks */}
         <div>
           <h3 className="text-xs uppercase tracking-wider text-gray-500 font-bold mb-3">Govt. Standards</h3>
           <div className="space-y-2">
@@ -258,6 +370,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ filters, setFilters }) =>
             </label>
           </div>
         </div>
+
       </div>
     </div>
   );

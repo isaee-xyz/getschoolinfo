@@ -5,7 +5,8 @@ import SchoolDetailClient from './SchoolDetailClient';
 import { School } from '@/types';
 
 // Fallback for build time or if env not set
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+// Fallback for build time or if env not set
+const API_URL = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
 async function getSchool(slug: string): Promise<School | null> {
     try {
