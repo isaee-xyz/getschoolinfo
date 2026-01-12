@@ -8,27 +8,42 @@ import SchoolList from '@/components/SchoolList';
 
 function SearchContent() {
     const searchParams = useSearchParams();
-    const districtParam = searchParams.get('district') || '';
+    // Default to Bathinda if no location/search is provided (per user requirement)
+    // But if 'search' (text) is present, we might search globally? 
+    // For now, consistent default:
+    const districtParam = searchParams.get('district');
+    const filterParam = searchParams.get('filter'); // 'academic' etc.
+    // If district is NULL (not in URL), default to Bathinda.
+    // If district is empty string (explicitly cleared), keep it empty (All).
+    const effectiveDistrict = districtParam === null ? 'Bathinda' : districtParam;
+
     const [schools, setSchools] = React.useState<any[]>([]);
     const [loading, setLoading] = React.useState(true);
 
     React.useEffect(() => {
         const fetchSchools = async () => {
             try {
-                // Construct query string from search params
+                // Construct query string
                 const params = new URLSearchParams();
-                if (districtParam) params.append('district', districtParam);
 
-                // Add support for state and search if they exist in URL
+                // Always pass district unless user is searching text globally
+                // Here we stick to "SchoolList" behavior: default to Bathinda
+                if (effectiveDistrict) params.append('district', effectiveDistrict);
+
+                // Add support for state and search
                 const stateParam = searchParams.get('state');
                 const queryParam = searchParams.get('search');
                 if (stateParam) params.append('state', stateParam);
                 if (queryParam) params.append('search', queryParam);
 
+                // Handle 'filter' -> 'sort'
+                if (filterParam === 'academic') {
+                    params.append('sort', 'academic');
+                }
+
                 const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/schools?${params.toString()}`);
                 if (!res.ok) throw new Error('Failed to fetch');
                 const data = await res.json();
-                setSchools(data);
                 setSchools(data);
             } catch (err) {
                 console.error("Error fetching schools:", err);
@@ -36,9 +51,8 @@ function SearchContent() {
                 setLoading(false);
             }
         };
-
         fetchSchools();
-    }, []);
+    }, [effectiveDistrict, searchParams, filterParam]);
 
     if (loading) {
         return <div className="container mx-auto p-8 text-center text-slate-500">Loading schools data...</div>;
@@ -46,8 +60,8 @@ function SearchContent() {
 
     return (
         <SchoolList
-            initialFilters={{ district: districtParam, location: '' }}
-            title={districtParam ? `Schools in ${districtParam}` : undefined}
+            initialFilters={{ district: effectiveDistrict, location: '' }}
+            title={effectiveDistrict ? `Schools in ${effectiveDistrict} ${filterParam ? `(${filterParam})` : ''}` : undefined}
             schools={schools}
         />
     );

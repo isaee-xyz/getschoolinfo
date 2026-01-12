@@ -27,9 +27,13 @@ This file serves as a quick-reference memory for the AI Agent working on `getsch
     *   Enriched `GET /api/schools` to return `badge_value_for_money` etc.
 *   **Frontend**: 
     *   Fixed `NEXT_PUBLIC_API_URL` double slash bug.
-    *   Fixed 500 Crash on School Detail (added checks for missing leadership data).
-    *   Updated `SchoolCard` to display "Best Value" / "Academic Elite" badges.
+    *   Fixed 500 Crash on School Detail.
+    *   Updated `Footer` to handle dynamic districts list efficiently (responsive grid, scrollable).
+    *   Resolved "page expired" issue on Search page by fixing dependency array.
+*   **API/Docs**:
+    *   Updated `swagger.ts` to include new derivative metrics (e.g., `student_teacher_ratio`, `boys_toilets_per_1000`).
+    *   Refactored `transformSchool` to prioritize DB-computed metrics.
 
 ## 📝 TODO / Next Steps
 *   Deploy to Staging.
-*   add more cities/districts beyond Bathinda.
+*   Add more cities/districts beyond Bathinda.

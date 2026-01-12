@@ -16,11 +16,11 @@ interface SchoolListProps {
 
 export default function SchoolList({ initialFilters, title, subtitle, schools = MOCK_SCHOOLS }: SchoolListProps) {
     const [showMobileFilters, setShowMobileFilters] = useState(false);
-    const [visibleCount, setVisibleCount] = useState(10);
+    const [visibleCount, setVisibleCount] = useState(50);
 
     const [filters, setFilters] = useState<FilterState>({
         location: initialFilters?.location || '',
-        district: initialFilters?.district || (!initialFilters?.location ? 'Bathinda' : ''), // Default to Bathinda as requested
+        district: initialFilters?.district || '',
         blocks: initialFilters?.blocks || [],
         maxFee: initialFilters?.maxFee || 200000,
         board: initialFilters?.board || [],
@@ -32,6 +32,13 @@ export default function SchoolList({ initialFilters, title, subtitle, schools = 
         rteCompliant: initialFilters?.rteCompliant || false,
         genderBalanced: initialFilters?.genderBalanced || false
     });
+
+    // Sync district from props if URL changes
+    React.useEffect(() => {
+        if (initialFilters?.district) {
+            setFilters(prev => ({ ...prev, district: initialFilters.district! }));
+        }
+    }, [initialFilters?.district]);
 
     const filteredSchools = useMemo(() => {
         return schools.filter(school => {

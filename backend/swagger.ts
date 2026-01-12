@@ -64,8 +64,14 @@ const options: swaggerJsdoc.Options = {
                         admission_fee: { type: 'number', example: 5000 },
 
                         // Metrics
+                        // Metrics
                         student_teacher_ratio: { type: 'number', example: 25.5 },
+                        students_per_classroom: { type: 'number', example: 45 },
                         gender_parity_index: { type: 'number', example: 0.98 },
+                        girls_toilets_per_1000: { type: 'number', example: 2.5 },
+                        boys_toilets_per_1000: { type: 'number', example: 2.1 },
+                        teacher_training_pct: { type: 'number', example: 85.5 },
+                        instructional_days_pct: { type: 'number', example: 92.0 },
 
                         // Media
                         images: {

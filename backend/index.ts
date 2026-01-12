@@ -28,7 +28,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 // Database connection
 const pool = new Pool({
   user: process.env.DB_USER,
-  host: process.env.DB_HOST,
+  host: process.env.DB_HOST || 'localhost',
   database: process.env.DB_NAME,
   password: process.env.DB_PASSWORD,
   port: parseInt(process.env.DB_PORT || '5432'),
@@ -137,10 +137,11 @@ const transformSchool = (s: any) => {
 
 // Helper to get table names based on environment
 const getTables = () => {
-  const isStaging = process.env.IS_STAGING === 'true';
+  // const isStaging = process.env.IS_STAGING === 'true';
+  // TEMPORARY: Use Prod DB tables for staging as requested
   return {
-    statsTable: isStaging ? 'school_stats_staging' : 'school_stats',
-    rawTable: isStaging ? 'schools_staging' : 'schools'
+    statsTable: 'school_stats', // isStaging ? 'school_stats_staging' : 'school_stats',
+    rawTable: 'schools' // isStaging ? 'schools_staging' : 'schools'
   };
 };
 
@@ -217,7 +218,7 @@ app.get('/api/health', (req, res) => {
 app.get('/api/schools', async (req, res) => {
   try {
     const { statsTable } = getTables();
-    const { district, state, search } = req.query;
+    const { district, state, search, sort } = req.query;
 
     let query = `SELECT * FROM ${statsTable}`;
     const values: any[] = [];
@@ -240,7 +241,15 @@ app.get('/api/schools', async (req, res) => {
       query += ` WHERE ${conditions.join(' AND ')}`;
     }
 
-    query += ` ORDER BY name ASC LIMIT 50`; // Limit for performance
+    // Sorting Logic
+    if (sort === 'academic') {
+      // Prioritize Teacher Training (High) and STR (Low but > 0)
+      query += ` ORDER BY teacher_training_pct DESC NULLS LAST, student_teacher_ratio ASC NULLS LAST`;
+    } else {
+      query += ` ORDER BY name ASC`;
+    }
+
+    query += ` LIMIT 1000`; // Limit for performance
 
     const result = await pool.query(query, values);
 

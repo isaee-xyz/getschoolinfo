@@ -18,6 +18,7 @@ CREATE TABLE school_stats (
     -- Location (Simplified)
     address TEXT,
     district TEXT,
+    block TEXT,
     state TEXT,
     pincode INTEGER,
     latitude DECIMAL(10, 6),
@@ -32,19 +33,19 @@ CREATE TABLE school_stats (
     admission_fee INTEGER DEFAULT 0,
     
     -- 13 Policy Metrics (Pre-calculated Benchmarks)
-    student_teacher_ratio DECIMAL(5, 2),
-    gender_parity_index DECIMAL(5, 2),
-    bed_qualification_pct DECIMAL(5, 2),
-    teacher_training_pct DECIMAL(5, 2),
-    regular_teacher_pct DECIMAL(5, 2),
-    students_per_classroom DECIMAL(5, 2),
-    boys_toilets_per_1000 DECIMAL(5, 2),
-    girls_toilets_per_1000 DECIMAL(5, 2),
-    furniture_availability_pct DECIMAL(5, 2),
-    instructional_days_pct DECIMAL(5, 2),
-    post_graduate_pct DECIMAL(5, 2),
-    devices_per_100 DECIMAL(5, 2),
-    displays_per_classroom DECIMAL(5, 2),
+    student_teacher_ratio DECIMAL(10, 2),
+    gender_parity_index DECIMAL(10, 2),
+    bed_qualification_pct DECIMAL(10, 2),
+    teacher_training_pct DECIMAL(10, 2),
+    regular_teacher_pct DECIMAL(10, 2),
+    students_per_classroom DECIMAL(10, 2),
+    boys_toilets_per_1000 DECIMAL(10, 2),
+    girls_toilets_per_1000 DECIMAL(10, 2),
+    furniture_availability_pct DECIMAL(10, 2),
+    instructional_days_pct DECIMAL(10, 2),
+    post_graduate_pct DECIMAL(10, 2),
+    devices_per_100 DECIMAL(10, 2),
+    displays_per_classroom DECIMAL(10, 2),
     
     -- Metadata
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

@@ -5,6 +5,8 @@ import { FilterState } from '../types';
 import { SlidersHorizontal } from 'lucide-react';
 import { useLocations } from '../hooks/useLocations';
 
+import { useRouter, useSearchParams } from 'next/navigation';
+
 interface FilterSidebarProps {
   filters: FilterState;
   setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
@@ -12,6 +14,8 @@ interface FilterSidebarProps {
 
 const FilterSidebar: React.FC<FilterSidebarProps> = ({ filters, setFilters }) => {
   const { districts, blocks, fetchBlocks } = useLocations();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Fetch blocks when district changes
   useEffect(() => {
@@ -40,14 +44,10 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ filters, setFilters }) =>
     }
 
     // 2. Auto-select blocks
+    // Whenever the available 'blocks' list updates (due to district change),
+    // automatically select ALL of them.
     if (filters.district && blocks.length > 0) {
-      setFilters(prev => {
-        // Only auto-select if we have 0 selected blocks, implies fresh fetch
-        if (!prev.blocks || prev.blocks.length === 0) {
-          return { ...prev, blocks: blocks };
-        }
-        return prev;
-      });
+      setFilters(prev => ({ ...prev, blocks: blocks }));
     }
   }, [blocks, districts, filters.district]);
 
@@ -80,6 +80,24 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ filters, setFilters }) =>
 
   const isAllBlocksSelected = blocks.length > 0 && blocks.every(b => filters.blocks?.includes(b));
 
+  const handleDistrictChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newDistrict = e.target.value;
+
+    // Update local state (immediate UI feedback)
+    setFilters(prev => ({ ...prev, district: newDistrict, blocks: [] }));
+
+    // Update URL to trigger server-side fetch
+    const currentFilter = searchParams.get('filter');
+    const params = new URLSearchParams();
+
+    // Always set district param, even if empty (to override default)
+    params.set('district', newDistrict);
+
+    if (currentFilter) params.set('filter', currentFilter); // Preserve sort/filter mode
+
+    router.push(`/search?${params.toString()}`);
+  };
+
   return (
     <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm sticky top-24">
       <div className="flex items-center gap-2 mb-6">
@@ -97,10 +115,10 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ filters, setFilters }) =>
             <label className="block text-sm font-semibold text-slate-700 mb-1">District</label>
             <select
               value={filters.district}
-              onChange={(e) => setFilters(prev => ({ ...prev, district: e.target.value, blocks: [] }))}
+              onChange={handleDistrictChange}
               className="w-full text-sm p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
             >
-              <option value="">Select District</option>
+              <option value="">All Districts</option>
               {districts.map((d: string) => (
                 <option key={d} value={d}>{d}</option>
               ))}
