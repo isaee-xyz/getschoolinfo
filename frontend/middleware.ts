@@ -5,7 +5,6 @@ import type { NextRequest } from 'next/server';
 // We block strictly known automated tools that don't respect UX or potential DOS vectors
 const BAD_BOT_AGENTS = [
     'python-requests',
-    'curl',
     'wget',
     'scrapy',
     'aiohttp',
