@@ -7,6 +7,9 @@ import { MOCK_SCHOOLS } from '@/constants';
 
 // --- Static Generation Configuration (ISR) ---
 
+export const dynamic = 'force-dynamic';
+
+/*
 export async function generateStaticParams() {
     return [
         { type: 'co-ed' },
@@ -16,6 +19,7 @@ export async function generateStaticParams() {
         { type: 'government' }
     ];
 }
+*/
 
 export const revalidate = 86400; // Daily
 
