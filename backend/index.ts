@@ -137,11 +137,9 @@ const transformSchool = (s: any) => {
 
 // Helper to get table names based on environment
 const getTables = () => {
-  // const isStaging = process.env.IS_STAGING === 'true';
-  // TEMPORARY: Use Prod DB tables for staging as requested
   return {
-    statsTable: 'school_stats', // isStaging ? 'school_stats_staging' : 'school_stats',
-    rawTable: 'schools' // isStaging ? 'schools_staging' : 'schools'
+    statsTable: 'school_stats',
+    rawTable: 'schools'
   };
 };
 
@@ -152,7 +150,7 @@ const getTables = () => {
  *   get:
  *     summary: System health check
  *     tags: [System]
- *     description: Returns the current status of the API and the active environment (staging/production).
+ *     description: Returns the current status of the API.
  *     responses:
  *       200:
  *         description: System is operational
@@ -169,7 +167,7 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date(),
-    env: process.env.IS_STAGING === 'true' ? 'staging' : 'production'
+    env: 'production'
   });
 });
 

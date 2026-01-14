@@ -27,9 +27,21 @@ export function middleware(request: NextRequest) {
     const ua = request.headers.get('user-agent')?.toLowerCase() || '';
     const ip = (request as any).ip || request.headers.get('x-forwarded-for') || '127.0.0.1';
 
-    // --- Check 1: Bot Blocking ---
-    // Allow legitimate bots (Google, GPT, etc.) implicitly by not listing them
-    // Block known script libraries
+    // --- Check 1: Bot Blocking & Sitemap Protection ---
+
+    // Feature: Restrict /sitemap.xml to Search Engines only (Anti-Scraping protection requested by user)
+    if (request.nextUrl.pathname === '/sitemap.xml') {
+        const allowedBots = ['googlebot', 'bingbot', 'slurp', 'duckduckbot', 'baiduspider', 'yandexbot', 'sogou', 'gptbot'];
+        // Allow bots OR standard browsers (Mozilla is present in almost all browser UAs)
+        // This blocks scripts like python-requests, curl, etc. unless they spoof headers.
+        const isAllowed = allowedBots.some(bot => ua.includes(bot)) || ua.includes('mozilla');
+
+        if (!isAllowed) {
+            // Optional: return 404 to hide it, or 403 to explicitly deny
+            return new NextResponse('Access Denied: Sitemap is restricted to search engine bots.', { status: 403 });
+        }
+    }
+
     if (BAD_BOT_AGENTS.some(bot => ua.includes(bot))) {
         return new NextResponse('Access Denied: Automated access restricted.', { status: 403 });
     }

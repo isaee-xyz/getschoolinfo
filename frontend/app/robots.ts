@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://getschoolinfo.com';
+    const baseUrl = 'https://getschoolsinfo.com';
 
     return {
         rules: [
@@ -17,7 +17,7 @@ export default function robots(): MetadataRoute.Robots {
             // Explicitly disallow common scrapers if possible by UA, 
             // though middleware is better for aggressive blocking.
             {
-                userAgent: ['CCBot', 'ChatGPT-User', 'GPTBot'],
+                userAgent: ['CCBot'],
                 allow: '/' // Re-iterating allow for AI bots just to be safe/explicit
             }
         ],

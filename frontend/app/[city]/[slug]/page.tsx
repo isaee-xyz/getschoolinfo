@@ -63,7 +63,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             images,
         },
         alternates: {
-            canonical: `https://getschoolinfo.com/${city}/${slug}`,
+            canonical: `https://getschoolsinfo.com/${city}/${slug}`,
         }
     };
 }
@@ -89,7 +89,7 @@ export default async function SchoolDetailPage({ params }: Props) {
             "postalCode": school.pincode,
             "addressCountry": "IN"
         },
-        "url": `https://getschoolinfo.com/${city}/${slug}`,
+        "url": `https://getschoolsinfo.com/${city}/${slug}`,
         "image": school.image
     };
 

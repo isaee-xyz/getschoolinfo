@@ -1,16 +1,32 @@
 version: '3.8'
 
 services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: school-portal-caddy-prod
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+    networks:
+      - app-network
+
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
     container_name: school-portal-frontend-prod
     restart: always
-    ports:
-      - "80:3002"
+    expose:
+      - "3002"
     environment:
-      - NEXT_PUBLIC_API_URL=https://api.getschoolinfo.com/api
+      - NEXT_PUBLIC_API_URL=https://getschoolsinfo.com/api
       - INTERNAL_API_URL=http://backend:4000/api
     depends_on:
       - backend
@@ -65,3 +81,5 @@ networks:
 
 volumes:
   postgres_data_prod:
+  caddy_data:
+  caddy_config:
