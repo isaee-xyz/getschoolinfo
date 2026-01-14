@@ -2,7 +2,14 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  /* config options here */
+  async rewrites() {
+    return [
+      {
+        source: '/:district-sitemap.xml',
+        destination: '/api/sitemap/district?district=:district',
+      },
+    ];
+  },
 };
 
 export default nextConfig;

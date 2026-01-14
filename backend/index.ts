@@ -247,7 +247,7 @@ app.get('/api/schools', async (req, res) => {
       query += ` ORDER BY name ASC`;
     }
 
-    query += ` LIMIT 1000`; // Limit for performance
+    query += ` LIMIT ${Math.min(Number(req.query.limit) || 1000, 20000)}`;
 
     const result = await pool.query(query, values);
 

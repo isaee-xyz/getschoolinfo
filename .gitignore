@@ -26,3 +26,9 @@ dist-ssr
 # Secrets
 backend/service-account.json
 .env
+deployment_images.tar.gz
+
+# Seed Data
+All District Data.json
+BATHIDNA.json
+BHOPAL.json
