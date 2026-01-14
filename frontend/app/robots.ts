@@ -21,6 +21,7 @@ export default function robots(): MetadataRoute.Robots {
                 allow: '/' // Re-iterating allow for AI bots just to be safe/explicit
             }
         ],
-        sitemap: `${baseUrl}/sitemap.xml`,
+        // Sitemap is hidden for now until verified
+        // sitemap: `${baseUrl}/sitemap.xml`,
     };
 }

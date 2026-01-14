@@ -8,6 +8,12 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const districtSlug = searchParams.get('district'); // e.g., 'buldana' from rewrite
 
+    // SECURITY: Only allow access with a secret token for now
+    const token = searchParams.get('token');
+    if (token !== 'preview') {
+        return new Response('Not Found', { status: 404 });
+    }
+
     const baseUrl = 'https://getschoolsinfo.com';
     const apiUrl = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
