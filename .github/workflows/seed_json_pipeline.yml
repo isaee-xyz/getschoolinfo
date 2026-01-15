@@ -1,0 +1,95 @@
+name: Smart JSON Seeding Pipeline
+
+on:
+  push:
+    paths:
+      - 'backend/seed_data/*.json'
+
+jobs:
+  process-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies (TS-Node)
+        run: |
+          cd backend
+          npm install typescript ts-node @types/node
+
+      - name: Convert JSON to SQL
+        id: convert
+        run: |
+          cd backend
+          # Find the first JSON file in seed_data (Generic auto-pick)
+          # In a real pipeline, we might handle multiple, but let's strictly handle one to avoid conflicts.
+          JSON_FILE=$(ls seed_data/*.json | head -n 1)
+          
+          if [ -z "$JSON_FILE" ]; then
+            echo "No JSON file found?"
+            exit 0
+          fi
+          
+          echo "🔄 Converting $JSON_FILE to SQL Stream..."
+          npx ts-node json2sql.ts "$JSON_FILE" > seed_stream.sql
+          
+          # Check if SQL generated
+          if [ ! -s seed_stream.sql ]; then
+             echo "❌ Error: Generated SQL is empty."
+             exit 1
+          fi
+          
+          # Compress for transfer
+          gzip seed_stream.sql
+          echo "file_path=backend/seed_stream.sql.gz" >> $GITHUB_OUTPUT
+
+      - name: Upload SQL to Production
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: root
+          key: ${{ secrets.PROD_SSH_KEY }}
+          source: ${{ steps.convert.outputs.file_path }}
+          target: "/root/getschoolinfo/backend/"
+          strip_components: 1
+
+      - name: Atomic Deploy to DB
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: root
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+             set -e
+             cd /root/getschoolinfo
+             
+             # Load Secrets
+             if [ -f .env ]; then export $(grep -v '^#' .env | xargs); fi
+             
+             cd backend
+             
+             echo "📦 Received Seed Stream..."
+             
+             echo "🧹 Cleaning previous data (TRUNCATE)..."
+             # Safety: Use CASCADE to handle relations
+             docker exec -i school-portal-db-prod psql -U "$DB_USER" -d "$DB_NAME" -c "TRUNCATE TABLE schools, school_stats CASCADE;"
+             
+             echo "🚀 Streaming Data (COPY Mode)..."
+             zcat seed_stream.sql.gz | docker exec -i school-portal-db-prod psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1
+             
+             # Verification
+             COUNT=$(docker exec -i school-portal-db-prod psql -U "$DB_USER" -d "$DB_NAME" -t -c "SELECT count(*) FROM schools;")
+             echo "📊 New Schools Count: $COUNT"
+             
+             if [ $(echo "$COUNT" | xargs) -lt 1 ]; then
+                 echo "❌ FAIL: Table is empty."
+                 exit 1
+             fi
+             
+             rm seed_stream.sql.gz
+             echo "✅ Pipeline Success."
