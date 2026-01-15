@@ -1,0 +1,19 @@
+name: Ops - Restarts Frontend (Clear Cache)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  restart:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restart Frontend Container
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: root
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+             echo "🔄 Restarting Frontend to clear ISR Cache..."
+             docker restart school-portal-frontend-prod
+             echo "✅ Restart Complete."
