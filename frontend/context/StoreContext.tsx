@@ -9,9 +9,9 @@ interface StoreContextType {
     shortlist: string[];
     compareList: string[];
     toggleShortlist: (id: string) => Promise<void>;
-    toggleCompare: (id: string) => void;
-    isInShortlist: (id: string) => boolean;
-    isInCompare: (id: string) => boolean;
+    toggleCompare: (id: string | number) => void;
+    isInShortlist: (id: string | number) => boolean;
+    isInCompare: (id: string | number) => boolean;
     clearCompare: () => void;
 }
 
@@ -91,25 +91,31 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
     };
 
-    const toggleCompare = (id: string) => {
-        if (!id) {
-            console.warn("Attempted to toggle compare with invalid ID");
+    const toggleCompare = (rawId: string | number) => {
+        console.log("toggleCompare CALLED with:", rawId, typeof rawId);
+        if (!rawId && rawId !== 0) {
+            console.warn("Attempted to toggle compare with invalid ID:", rawId);
             return;
         }
+        const id = String(rawId);
+        console.log("toggleCompare PROCESSED ID:", id);
+
         setCompareList(prev => {
             if (prev.includes(id)) {
+                console.log("Removing from compare:", id);
                 return prev.filter(item => item !== id);
             }
             if (prev.length >= 3) {
                 alert("You can compare up to 3 schools at a time.");
                 return prev;
             }
+            console.log("Adding to compare:", id);
             return [...prev, id];
         });
     };
 
-    const isInShortlist = (id: string) => shortlist.includes(id);
-    const isInCompare = (id: string) => compareList.includes(id);
+    const isInShortlist = (id: string | number) => shortlist.includes(String(id));
+    const isInCompare = (id: string | number) => compareList.includes(String(id));
     const clearCompare = () => setCompareList([]);
 
     return (

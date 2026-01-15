@@ -105,8 +105,8 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
         );
     }
 
-    const isSaved = isInShortlist(school.id);
-    const isComparing = isInCompare(school.id);
+    const isSaved = isInShortlist(String(school.id));
+    const isComparing = isInCompare(String(school.id));
 
     console.log("DEBUG SCHOOL DATA:", school);
     console.log("District:", school.district);
@@ -114,7 +114,7 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
 
     const handleShortlist = () => {
         setAnimating(true);
-        toggleShortlist(school.id);
+        toggleShortlist(String(school.id));
         setTimeout(() => setAnimating(false), 300);
     };
 
@@ -245,7 +245,7 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
                                 </div>
 
                                 <button
-                                    onClick={() => toggleCompare(school.id)}
+                                    onClick={() => toggleCompare(String(school.id))}
                                     className={`flex items-center justify-center gap-2 font-bold py-2.5 px-6 rounded-lg shadow-sm transition-colors border ${isComparing
                                         ? 'bg-blue-50 text-blue-600 border-blue-200'
                                         : 'bg-white text-slate-700 border-gray-300 hover:bg-gray-50'

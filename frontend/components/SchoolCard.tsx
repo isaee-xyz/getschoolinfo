@@ -12,8 +12,9 @@ interface SchoolCardProps {
 }
 
 const SchoolCard: React.FC<SchoolCardProps> = ({ school }) => {
-  const { toggleCompare, isInCompare } = useStore();
+  const { toggleCompare, isInCompare, isInShortlist } = useStore();
   const isComparing = isInCompare(school.id);
+  const isSaved = isInShortlist(school.id);
 
   // --- Derivative Metric Calculations ---
   // The API (school_stats table) provides pre-calculated snake_case metrics.
@@ -172,7 +173,12 @@ const SchoolCard: React.FC<SchoolCardProps> = ({ school }) => {
 
         <div className="flex items-center justify-between border-t border-gray-100 pt-3">
           <button
-            onClick={() => toggleCompare(school.id)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log("SchoolCard Compare Clicked:", school.id, typeof school.id);
+              toggleCompare(String(school.id));
+            }}
             className={`text-xs font-bold flex items-center gap-1 transition-colors ${isComparing ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
           >
             <Scale className={`w-4 h-4 ${isComparing ? 'fill-blue-100' : ''}`} />
