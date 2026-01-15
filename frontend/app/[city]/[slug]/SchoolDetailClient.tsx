@@ -6,11 +6,12 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { MOCK_SCHOOLS } from '@/constants';
 import { useStore } from '@/context/StoreContext';
+import { useAuth } from '@/context/AuthContext';
 import { FeeStructure, FeeDetails, School } from '@/types';
 import InfoTooltip from '@/components/InfoTooltip';
 import {
     MapPin, Phone, User, CheckCircle, ChevronDown, ChevronUp, ShieldCheck, Heart, Share2, Scale, Navigation,
-    GraduationCap, BookOpen, Building, Laptop, Trophy, ImageIcon, Mail, FileCheck, Zap, Wifi
+    GraduationCap, BookOpen, Building, Laptop, Trophy, ImageIcon, Mail, FileCheck, Zap, Wifi, Lock
 } from 'lucide-react';
 
 // --- Helper Components ---
@@ -126,6 +127,7 @@ interface SchoolDetailClientProps {
 const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
     const router = useRouter();
     const { toggleShortlist, isInShortlist, toggleCompare, isInCompare } = useStore();
+    const { isAuthenticated, loginWithGoogle } = useAuth();
     const [animating, setAnimating] = useState(false);
     const [activeFeeTab, setActiveFeeTab] = useState<keyof FeeStructure>('primary');
 
@@ -468,7 +470,13 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
                                         <div>
                                             <p className="text-xs text-gray-500 uppercase font-bold">Principal</p>
                                             <p className="text-sm font-bold text-slate-800">{school.leadership?.principal?.name || "Not Available"}</p>
-                                            {school.leadership?.principal?.email && <p className="text-xs text-blue-600 truncate">{school.leadership.principal.email.toLowerCase()}</p>}
+                                            {school.leadership?.principal?.email && (
+                                                isAuthenticated ? (
+                                                    <p className="text-xs text-blue-600 truncate">{school.leadership.principal.email.toLowerCase()}</p>
+                                                ) : (
+                                                    <p className="text-xs text-gray-400 blur-[2px] select-none">******@*******.**</p>
+                                                )
+                                            )}
                                         </div>
                                     </div>
 
@@ -476,7 +484,13 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
                                         <p className="text-xs text-gray-500 uppercase font-bold mb-2">Committees</p>
                                         <div className="bg-gray-50 p-2 rounded text-xs text-slate-700">
                                             <span className="font-semibold block">Sexual Harassment Committee:</span>
-                                            {school.leadership?.sexualHarassmentCommitteeHead?.name || "N/A"} ({school.leadership?.sexualHarassmentCommitteeHead?.contactNumber || "N/A"})
+                                            {school.leadership?.sexualHarassmentCommitteeHead?.name || "N/A"}
+                                            {" "}
+                                            {isAuthenticated ? (
+                                                `(${school.leadership?.sexualHarassmentCommitteeHead?.contactNumber || "N/A"})`
+                                            ) : (
+                                                <span className="blur-[2px] text-gray-400 select-none">(**********)</span>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -517,26 +531,69 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
                             </div>
 
                             {/* Contact Info */}
-                            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                            {/* Contact Info - Gated */}
+                            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 relative overflow-hidden">
                                 <h3 className="font-bold text-slate-900 mb-4">Contact Details</h3>
-                                <ul className="space-y-3 text-sm">
-                                    {school.leadership?.principal?.contactNumber && (
-                                        <li className="flex items-center gap-3">
-                                            <Phone className="w-4 h-4 text-gray-400" />
-                                            <span className="text-slate-700">{school.leadership.principal.contactNumber}</span>
+
+                                {isAuthenticated ? (
+                                    <ul className="space-y-3 text-sm">
+                                        {school.leadership?.principal?.contactNumber && (
+                                            <li className="flex items-center gap-3">
+                                                <Phone className="w-4 h-4 text-gray-400" />
+                                                <span className="text-slate-700">{school.leadership.principal.contactNumber}</span>
+                                            </li>
+                                        )}
+                                        {school.leadership?.principal?.email && (
+                                            <li className="flex items-center gap-3">
+                                                <Mail className="w-4 h-4 text-gray-400" />
+                                                <span className="text-slate-700 truncate">{school.leadership.principal.email.toLowerCase()}</span>
+                                            </li>
+                                        )}
+                                        <li className="flex items-start gap-3">
+                                            <MapPin className="w-4 h-4 text-gray-400 mt-1" />
+                                            <span className="text-slate-700">{school.address}</span>
                                         </li>
-                                    )}
-                                    {school.leadership?.principal?.email && (
-                                        <li className="flex items-center gap-3">
-                                            <Mail className="w-4 h-4 text-gray-400" />
-                                            <span className="text-slate-700 truncate">{school.leadership.principal.email.toLowerCase()}</span>
-                                        </li>
-                                    )}
-                                    <li className="flex items-start gap-3">
-                                        <MapPin className="w-4 h-4 text-gray-400 mt-1" />
-                                        <span className="text-slate-700">{school.address}</span>
-                                    </li>
-                                </ul>
+                                    </ul>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {/* Blurred Placeholder */}
+                                        <div className="space-y-3 opacity-50 blur-[3px] select-none">
+                                            <div className="flex items-center gap-3">
+                                                <Phone className="w-4 h-4" />
+                                                <span className="text-slate-700">+91 99999 99999</span>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <Mail className="w-4 h-4" />
+                                                <span className="text-slate-700">contact@school.edu.in</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Gating CTA */}
+                                        <div className="absolute inset-0 bg-white/60 flex items-center justify-center p-4 text-center backdrop-blur-[1px]">
+                                            <div className="bg-white p-4 rounded-xl shadow-lg border border-blue-100 max-w-[280px]">
+                                                <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                                                    <Lock className="w-5 h-5" />
+                                                </div>
+                                                <h4 className="font-bold text-slate-800 text-sm mb-1">Unlock Contact Info</h4>
+                                                <p className="text-xs text-slate-500 mb-3">Login to view official email addresses and phone numbers for this school.</p>
+                                                <button
+                                                    onClick={() => loginWithGoogle()}
+                                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
+                                                >
+                                                    <User className="w-3 h-3" />
+                                                    Login to View
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Visible Address (Always show address as per request 'except name' - usually address is key part of name/loc) 
+                                            Wait, user said "hide/blur phone email except name". Address is usually fine? 
+                                            Let's keep address visible below the blur if possible, or just hide it all for simplicity/impact.
+                                            Actually, maps are visible above. Address is visible in Hero.
+                                            So hiding this card's content is fine.
+                                         */}
+                                    </div>
+                                )}
                             </div>
 
                         </div>
@@ -547,8 +604,17 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
 
             {/* Mobile Sticky Action Bar */}
             <div className="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] flex gap-4 z-50">
-                <button className="flex-1 flex items-center justify-center gap-2 bg-white border border-blue-600 text-blue-600 font-bold py-3 rounded-lg">
-                    <Phone className="w-4 h-4" /> Call
+                <button
+                    onClick={() => isAuthenticated ? void 0 : loginWithGoogle()}
+                    className="flex-1 flex items-center justify-center gap-2 bg-white border border-blue-600 text-blue-600 font-bold py-3 rounded-lg"
+                >
+                    {isAuthenticated ? (
+                        <a href={`tel:${school.leadership?.principal?.contactNumber}`} className="flex items-center gap-2 w-full justify-center">
+                            <Phone className="w-4 h-4" /> Call
+                        </a>
+                    ) : (
+                        <span className="flex items-center gap-2"> <Lock className="w-4 h-4" /> Login to Call </span>
+                    )}
                 </button>
                 <button className="flex-1 bg-blue-600 text-white font-bold py-3 rounded-lg shadow-md">
                     Visit School
