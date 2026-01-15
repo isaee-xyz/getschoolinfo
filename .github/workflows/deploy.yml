@@ -68,68 +68,58 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-and-push
     steps:
-      - name: Set Deployment Config
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare Deployment Configuration
         id: config
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-             echo "HOST=${{ secrets.PROD_HOST }}" >> $GITHUB_OUTPUT
-             echo "SSH_KEY=${{ secrets.PROD_SSH_KEY }}" >> $GITHUB_OUTPUT
-             echo "ENV_CONTENT<<EOF" >> $GITHUB_OUTPUT
-             echo "${{ secrets.PROD_ENV }}" >> $GITHUB_OUTPUT
-             echo "EOF" >> $GITHUB_OUTPUT
-             echo "TAG=main" >> $GITHUB_OUTPUT
+             echo "HOST=${{ secrets.PROD_HOST }}" >> $GITHUB_ENV
+             
+             # Handle Multi-line SSH Key safely
+             echo "SSH_KEY<<EOF" >> $GITHUB_ENV
+             echo "${{ secrets.PROD_SSH_KEY }}" >> $GITHUB_ENV
+             echo "EOF" >> $GITHUB_ENV
+             
+             # Create .env file from secret
+             echo "${{ secrets.PROD_ENV }}" > .env
+             
+             echo "TAG=main" >> $GITHUB_ENV
+             
           elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
-             echo "HOST=${{ secrets.STAGING_HOST }}" >> $GITHUB_OUTPUT
-             echo "SSH_KEY=${{ secrets.STAGING_SSH_KEY }}" >> $GITHUB_OUTPUT
-             echo "ENV_CONTENT<<EOF" >> $GITHUB_OUTPUT
-             echo "${{ secrets.STAGING_ENV }}" >> $GITHUB_OUTPUT
-             echo "EOF" >> $GITHUB_OUTPUT
-             echo "TAG=staging" >> $GITHUB_OUTPUT
+             echo "HOST=${{ secrets.STAGING_HOST }}" >> $GITHUB_ENV
+             
+             echo "SSH_KEY<<EOF" >> $GITHUB_ENV
+             echo "${{ secrets.STAGING_SSH_KEY }}" >> $GITHUB_ENV
+             echo "EOF" >> $GITHUB_ENV
+             
+             echo "${{ secrets.STAGING_ENV }}" > .env
+             
+             echo "TAG=staging" >> $GITHUB_ENV
           fi
+
+      - name: Copy Files to Server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ env.HOST }}
+          username: root
+          key: ${{ env.SSH_KEY }}
+          source: "docker-compose.prod.yml,Caddyfile,.env"
+          target: "/root/getschoolinfo/"
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ steps.config.outputs.HOST }}
+          host: ${{ env.HOST }}
           username: root
-          key: ${{ steps.config.outputs.SSH_KEY }}
-          script: |
-            # Ensure project directory exists
-            mkdir -p getschoolinfo
-            cd getschoolinfo
-            
-            # We need the docker-compose.prod.yml
-            # Ideally we check it out or download it. 
-            # For now, let's assume it's there or we curl it from raw github content?
-            # Better: The 'checkout' step in a self-hosted runner would do this, but here we are remote.
-            # We can upload the compose file from the runner to the server.
-            
-      - name: Checkout for Compose File
-        uses: actions/checkout@v4
-
-      - name: Copy Compose File to Server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ steps.config.outputs.HOST }}
-          username: root
-          key: ${{ steps.config.outputs.SSH_KEY }}
-          source: "docker-compose.prod.yml,Caddyfile"
-          target: "/root/getschoolinfo/"
-
-      - name: Finalize Deployment
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ steps.config.outputs.HOST }}
-          username: root
-          key: ${{ steps.config.outputs.SSH_KEY }}
+          key: ${{ env.SSH_KEY }}
+          envs: TAG
           script: |
             cd /root/getschoolinfo
             
             # Export TAG for docker-compose interpolation
-            export IMAGE_TAG=${{ steps.config.outputs.TAG }}
-            
-            # Write .env from secret
-            echo "${{ steps.config.outputs.ENV_CONTENT }}" > .env
+            export IMAGE_TAG=$TAG
             
             # Pull and Restart
             docker compose -f docker-compose.prod.yml pull
