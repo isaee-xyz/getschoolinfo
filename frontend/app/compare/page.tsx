@@ -148,7 +148,10 @@ function CompareContent() {
 
                 {schools.length > 0 && (
                     <div className="flex gap-3">
-                        <button onClick={clearCompare} className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-bold border border-transparent hover:border-red-200">
+                        <button onClick={() => {
+                            clearCompare();
+                            router.push('/compare');
+                        }} className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-bold border border-transparent hover:border-red-200">
                             <Trash2 className="w-4 h-4" /> Clear
                         </button>
                         <button onClick={handleShare} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-bold shadow-sm transition-colors">

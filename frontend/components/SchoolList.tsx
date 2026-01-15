@@ -16,7 +16,7 @@ interface SchoolListProps {
 
 export default function SchoolList({ initialFilters, title, subtitle, schools = MOCK_SCHOOLS }: SchoolListProps) {
     const [showMobileFilters, setShowMobileFilters] = useState(false);
-    const [visibleCount, setVisibleCount] = useState(50);
+    const [visibleCount, setVisibleCount] = useState(10);
 
     const [filters, setFilters] = useState<FilterState>({
         location: initialFilters?.location || '',
