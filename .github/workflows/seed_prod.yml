@@ -2,21 +2,51 @@ name: Seed Production Database
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - 'backend/schools_chunk_*'
+      - '.github/workflows/seed_prod.yml'
 
 jobs:
   seed:
     runs-on: ubuntu-latest
     steps:
-      - name: Exec Seed Script on Server
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Copy Chunks to Server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: root
+          key: ${{ secrets.PROD_SSH_KEY }}
+          source: "backend/schools_chunk_*"
+          target: "/root/getschoolinfo/backend/"
+          strip_components: 1
+
+      - name: Reassemble & Seed
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.PROD_HOST }}
           username: root
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
-             cd /root/getschoolinfo
-             echo "🌱 Starting Remote Seeding inside Backend container..."
-             # We use the seed script embedded in the image
-             # The file path in the container is ./Schools get.json (WORKDIR /app)
-             docker compose -f docker-compose.prod.yml exec -T backend node dist/seed.js "Schools get.json"
-             echo "✅ Seeding Command Executed."
+             cd /root/getschoolinfo/backend
+             
+             echo "📂 Debug: Listing files..."
+             ls -la schools_chunk_* || echo "⚠️  Chunks missing in $(pwd)"
+             
+             echo "📦 Reassembling 270MB file from chunks..."
+             cat schools_chunk_* > schools_temp.json
+             rm schools_chunk_*
+             
+             echo "🌱 Moving to container..."
+             docker cp schools_temp.json school-portal-backend-prod:/app/schools_temp.json
+             rm schools_temp.json
+             
+             echo "🚀 Running Seeder..."
+             docker exec school-portal-backend-prod node dist/seed.js schools_temp.json
+             
+             echo "🧹 Cleanup..."
+             docker exec school-portal-backend-prod rm schools_temp.json
+             echo "✅ DONE."
