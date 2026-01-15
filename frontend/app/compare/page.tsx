@@ -36,7 +36,9 @@ function CompareContent() {
 
     // Create a combined unique set of IDs to display
     // Prioritize URL IDs if they exist (shared view), otherwise store
-    const displayIds = urlIds.length > 0 ? urlIds : compareList;
+    const rawIds = urlIds.length > 0 ? urlIds : compareList;
+    // user request: "is ui sorted". Ensure visual order matches canonical ID order.
+    const displayIds = [...rawIds].sort();
     const [schools, setSchools] = useState<School[]>([]);
 
     useEffect(() => {
