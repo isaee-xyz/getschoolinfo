@@ -4,8 +4,11 @@ import { School } from '@/types';
 export const dynamic = 'force-dynamic';
 export const revalidate = 3600;
 
-export async function GET(request: NextRequest, { params }: { params: { district: string } }) {
-    const { district } = params;
+export async function GET(
+    request: NextRequest,
+    { params }: { params: Promise<{ district: string }> }
+) {
+    const { district } = await params;
     const districtSlug = district; // e.g., 'agar-malwa'
 
     const searchParams = request.nextUrl.searchParams;
