@@ -53,9 +53,10 @@ jobs:
              echo "⚠️  Truncating existing tables..."
              docker exec -i school-portal-db-prod psql -U "$DB_USER" -d "$DB_NAME" -c "TRUNCATE TABLE schools, school_stats CASCADE;"
              
-             # 2. Import Data (Stop on Error)
-             # Use dynamic variables loaded from .env
-             zcat prod_seed.sql.gz | docker exec -i school-portal-db-prod psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1
+             # 2. Import Data (Verbose + Stop on Error)
+             # -a: Echo all queries (helps debug)
+             # -v ON_ERROR_STOP=1: Fail workflow if any SQL fails
+             zcat prod_seed.sql.gz | docker exec -i school-portal-db-prod psql -U "$DB_USER" -d "$DB_NAME" -a -v ON_ERROR_STOP=1
              
              echo "🧹 Cleanup..."
              rm prod_seed.sql.gz
@@ -67,6 +68,7 @@ jobs:
              # Metric: Expecting ~38,000 schools. Fail if < 30,000.
              if [ $(echo "$COUNT" | xargs) -lt 30000 ]; then
                 echo "❌ Error: Schools table count ($COUNT) is too low! Expected >30k."
+                # We exit 0 here so I can see the logs, but mark as "Neutral" in logic? No, exit 1 to alert user.
                 exit 1
              fi
              
