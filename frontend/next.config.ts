@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/:district-sitemap.xml',
-        destination: '/api/sitemap/district?district=:district',
+        destination: '/sitemaps/:district',
       },
     ];
   },
