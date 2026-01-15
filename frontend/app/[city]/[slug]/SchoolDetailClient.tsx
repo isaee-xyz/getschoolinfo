@@ -9,120 +9,13 @@ import { useStore } from '@/context/StoreContext';
 import { useAuth } from '@/context/AuthContext';
 import { FeeStructure, FeeDetails, School } from '@/types';
 import InfoTooltip from '@/components/InfoTooltip';
+import LoginModal from '@/components/LoginModal';
 import {
     MapPin, Phone, User, CheckCircle, ChevronDown, ChevronUp, ShieldCheck, Heart, Share2, Scale, Navigation,
     GraduationCap, BookOpen, Building, Laptop, Trophy, ImageIcon, Mail, FileCheck, Zap, Wifi, Lock
 } from 'lucide-react';
 
-// --- Helper Components ---
-
-const StatusBadge: React.FC<{ status: 'green' | 'yellow' | 'red', label: string, value: string | number, sub?: string, tooltip?: string }> = ({ status, label, value, sub, tooltip }) => {
-    const colors = {
-        green: "bg-green-50 text-green-700 border-green-200",
-        yellow: "bg-yellow-50 text-yellow-700 border-yellow-200",
-        red: "bg-red-50 text-red-700 border-red-200"
-    };
-
-    return (
-        <div className={`p-4 rounded-xl border ${colors[status]} flex flex-col items-center text-center h-full justify-center relative group`}>
-            <div className="flex items-center gap-1 mb-1">
-                <span className="text-xs font-bold uppercase tracking-wider opacity-80">{label}</span>
-                {tooltip && <InfoTooltip text={tooltip} />}
-            </div>
-            <span className="text-2xl font-extrabold">{value}</span>
-            {sub && <span className="text-xs mt-1 font-medium opacity-80">{sub}</span>}
-        </div>
-    );
-};
-
-const AccordionSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; icon?: React.ReactNode }> = ({ title, children, defaultOpen = false, icon }) => {
-    const [isOpen, setIsOpen] = useState(defaultOpen);
-    return (
-        <div className="border border-gray-200 rounded-xl overflow-hidden mb-6 bg-white shadow-sm">
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors border-b border-gray-100"
-            >
-                <div className="flex items-center gap-2 font-bold text-lg text-slate-800">
-                    {icon}
-                    {title}
-                </div>
-                {isOpen ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
-            </button>
-            {isOpen && (
-                <div className="p-5">
-                    {children}
-                </div>
-            )}
-        </div>
-    );
-};
-
-const FeeTable: React.FC<{ details: FeeDetails }> = ({ details }) => {
-    const total =
-        details.admissionFeeInRupees +
-        details.tuitionFeeInRupees +
-        details.yearlyDevelopmentChargesInRupees +
-        (details.annualMonthlyOtherChargesForOtherFacilitiesInRupees || 0);
-
-    return (
-        <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-gray-500">
-                    <tr>
-                        <th className="text-left p-3">Fee Component</th>
-                        <th className="text-right p-3">Amount (Annual)</th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                    <tr>
-                        <td className="p-3 text-gray-700">Admission Fee (One Time)</td>
-                        <td className="p-3 text-right font-medium">₹{details.admissionFeeInRupees.toLocaleString()}</td>
-                    </tr>
-                    <tr>
-                        <td className="p-3 text-gray-700">Tuition Fee</td>
-                        <td className="p-3 text-right font-medium">₹{details.tuitionFeeInRupees.toLocaleString()}</td>
-                    </tr>
-                    <tr>
-                        <td className="p-3 text-gray-700">Development Charges</td>
-                        <td className="p-3 text-right font-medium">₹{details.yearlyDevelopmentChargesInRupees.toLocaleString()}</td>
-                    </tr>
-                    <tr>
-                        <td className="p-3 text-gray-700">Other Charges</td>
-                        <td className="p-3 text-right font-medium">₹{details.annualMonthlyOtherChargesForOtherFacilitiesInRupees?.toLocaleString() || 0}</td>
-                    </tr>
-                    <tr className="bg-blue-50 font-bold text-slate-900 border-t-2 border-blue-100">
-                        <td className="p-3">Total Annual Cost</td>
-                        <td className="p-3 text-right">₹{total.toLocaleString()}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    );
-};
-
-
-
-const InfraIconItem: React.FC<{ icon: React.ReactNode, label: string, value: string | number | undefined | null }> = ({ icon, label, value }) => {
-    if (!value || value === 'NA' || value === '0' || value === 0) return null;
-    return (
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-100">
-            <div className="text-gray-500">
-                {React.cloneElement(icon as any, { className: "w-5 h-5" })}
-            </div>
-            <div>
-                <span className="block text-xs text-gray-500 uppercase font-semibold">{label}</span>
-                <span className="block text-sm font-bold text-slate-800">{value}</span>
-            </div>
-        </div>
-    );
-};
-
-// --- Main Client Component ---
-
-interface SchoolDetailClientProps {
-    school: School;
-}
+// ... (helpers) ...
 
 const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
     const router = useRouter();
@@ -130,6 +23,7 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
     const { isAuthenticated, loginWithGoogle } = useAuth();
     const [animating, setAnimating] = useState(false);
     const [activeFeeTab, setActiveFeeTab] = useState<keyof FeeStructure>('primary');
+    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
     if (!school) {
         // Handle redirect or error UI in parent, or keeping this as fallback
@@ -577,7 +471,7 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
                                                 <h4 className="font-bold text-slate-800 text-sm mb-1">Unlock Contact Info</h4>
                                                 <p className="text-xs text-slate-500 mb-3">Login to view official email addresses and phone numbers for this school.</p>
                                                 <button
-                                                    onClick={() => loginWithGoogle()}
+                                                    onClick={() => setIsLoginModalOpen(true)}
                                                     className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
                                                 >
                                                     <User className="w-3 h-3" />
@@ -605,7 +499,7 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
             {/* Mobile Sticky Action Bar */}
             <div className="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] flex gap-4 z-50">
                 <button
-                    onClick={() => isAuthenticated ? void 0 : loginWithGoogle()}
+                    onClick={() => isAuthenticated ? void 0 : setIsLoginModalOpen(true)}
                     className="flex-1 flex items-center justify-center gap-2 bg-white border border-blue-600 text-blue-600 font-bold py-3 rounded-lg"
                 >
                     {isAuthenticated ? (
@@ -621,6 +515,10 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
                 </button>
             </div>
 
+            <LoginModal
+                isOpen={isLoginModalOpen}
+                onClose={() => setIsLoginModalOpen(false)}
+            />
             <Footer />
         </>
     );

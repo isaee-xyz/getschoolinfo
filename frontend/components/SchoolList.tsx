@@ -153,7 +153,7 @@ export default function SchoolList({ initialFilters, title, subtitle, schools = 
                                 {visibleCount < filteredSchools.length && (
                                     <div className="text-center mt-8">
                                         <button
-                                            onClick={() => setVisibleCount(prev => prev + 12)}
+                                            onClick={() => setVisibleCount(prev => prev + 10)}
                                             className="bg-white border border-gray-300 text-slate-700 font-bold py-3 px-8 rounded-full shadow-sm hover:bg-gray-50 hover:shadow-md transition-all"
                                         >
                                             Load More Schools ({filteredSchools.length - visibleCount} remaining)

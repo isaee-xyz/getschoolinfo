@@ -13,6 +13,11 @@ export default function LoginPage() {
     const [name, setName] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+
+    // Consent State (Auto-checked by default)
+    const [privacyChecked, setPrivacyChecked] = useState(true);
+    const [marketingChecked, setMarketingChecked] = useState(true);
+
     const { loginWithGoogle } = useAuth();
     const router = useRouter();
 
@@ -49,10 +54,37 @@ export default function LoginPage() {
                         </div>
 
                         <div className="space-y-4">
+                            {/* Consent Checkboxes */}
+                            <div className="space-y-3 mb-6">
+                                <label className="flex items-start gap-3 cursor-pointer group">
+                                    <input
+                                        type="checkbox"
+                                        checked={privacyChecked}
+                                        onChange={(e) => setPrivacyChecked(e.target.checked)}
+                                        className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                    />
+                                    <span className="text-sm text-slate-600 leading-tight">
+                                        I agree to the <a href="/terms-and-condition" className="text-blue-600 hover:underline" target="_blank">Terms & Conditions</a> and <a href="/privacy-policy" className="text-blue-600 hover:underline" target="_blank">Privacy Policy</a>. <span className="text-red-500">*</span>
+                                    </span>
+                                </label>
+
+                                <label className="flex items-start gap-3 cursor-pointer group">
+                                    <input
+                                        type="checkbox"
+                                        checked={marketingChecked}
+                                        onChange={(e) => setMarketingChecked(e.target.checked)}
+                                        className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                    />
+                                    <span className="text-xs text-slate-500 leading-tight group-hover:text-slate-700 transition-colors">
+                                        I agree to receive school updates, admissions info, and educational content via WhatsApp, SMS, Email, or Call. (Optional)
+                                    </span>
+                                </label>
+                            </div>
+
                             <button
                                 onClick={handleGoogleLogin}
-                                disabled={isLoading}
-                                className="w-full bg-white border border-gray-300 hover:bg-gray-50 text-slate-700 font-bold py-3 rounded-lg shadow-sm transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
+                                disabled={isLoading || !privacyChecked}
+                                className="w-full bg-white border border-gray-300 hover:bg-gray-50 text-slate-700 font-bold py-3 rounded-lg shadow-sm transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
                             >
                                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-6 h-6" alt="Google" />
                                 <span>Continue with Google</span>

@@ -52,7 +52,9 @@ const transformSchool = (s: any) => {
     ...raw, // Merge raw first so explicit s props override
 
     // ID & Basics
-    id: s.id ? s.id.toString() : (s.udise_code ? s.udise_code.toString() : 'unknown'),
+    // Prioritize UDISE Code as it's the guaranteed unique business key. 
+    // Fallback to DB ID if UDISE is missing.
+    id: (s.udise_code || s.id || 'unknown').toString(),
     udiseCode: s.udise_code,
     estdYear: estd_year ? estd_year.toString() : null,
     schoolStatusName: s.schoolStatusName || raw.schoolStatusName || "Operational",
@@ -321,6 +323,75 @@ app.get('/api/school/:slug', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Search Locations (District Autocomplete)
+/**
+ * @swagger
+ * /api/locations/search:
+ *   get:
+ *     summary: Search for districts
+ *     tags: [Configuration]
+ *     parameters:
+ *       - in: query
+ *         name: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Partial district name
+ *     responses:
+ *       200:
+ *         description: List of matching districts
+ */
+app.get('/api/locations/search', async (req, res) => {
+  try {
+    const { statsTable } = getTables();
+    const { query } = req.query;
+
+    if (!query || String(query).length < 2) {
+      return res.json([]);
+    }
+
+    const result = await pool.query(`
+      SELECT DISTINCT district, state 
+      FROM ${statsTable} 
+      WHERE district ILIKE $1 
+      ORDER BY district ASC 
+      LIMIT 10
+    `, [`${query}%`]);
+
+    res.json(result.rows.map(r => ({
+      name: r.district,
+      state: r.state,
+      slug: r.district.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '')
+    })));
+  } catch (err) {
+    console.error("Error searching locations:", err);
+    res.status(500).json({ error: 'Search failed' });
+  }
+});
+
+// Stats Endpoint
+/**
+ * @swagger
+ * /api/stats/total-schools:
+ *   get:
+ *     summary: Get total school count
+ *     tags: [Statistics]
+ *     responses:
+ *       200:
+ *         description: Total count
+ */
+app.get('/api/stats/total-schools', async (req, res) => {
+  try {
+    const { statsTable } = getTables();
+    const result = await pool.query(`SELECT COUNT(*) as count FROM ${statsTable}`);
+    const count = parseInt(result.rows[0].count, 10);
+    res.json({ count });
+  } catch (err) {
+    console.error("Error fetching stats:", err);
+    res.status(500).json({ error: 'Stats failed' });
   }
 });
 
