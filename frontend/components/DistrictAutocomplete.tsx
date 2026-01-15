@@ -4,8 +4,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, MapPin, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
+import { useStore } from '../context/StoreContext';
+
 export default function DistrictAutocomplete() {
     const router = useRouter();
+    const { addRecentSearch } = useStore();
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -52,6 +55,7 @@ export default function DistrictAutocomplete() {
     const handleSelect = (district: string) => {
         setQuery(district);
         setIsOpen(false);
+        addRecentSearch(district);
         // Explicitly clear 'search' (text) param to resolve conflict
         router.push(`/search?district=${encodeURIComponent(district)}&search=`);
     };

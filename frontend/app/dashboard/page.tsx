@@ -12,7 +12,7 @@ import { MOCK_SCHOOLS } from '@/constants';
 import { Heart, BookOpen, Settings, LogOut, TrendingUp, Search } from 'lucide-react';
 
 export default function DashboardPage() {
-    const { shortlist, compareList } = useStore();
+    const { shortlist, compareList, recentSearches } = useStore();
     const { user, userProfile, isAuthenticated, logout } = useAuth();
     const router = useRouter();
 
@@ -93,7 +93,7 @@ export default function DashboardPage() {
                                 </div>
                                 <div>
                                     <p className="text-slate-300 text-sm font-medium">Recent Searches</p>
-                                    <p className="text-2xl font-bold">12</p>
+                                    <p className="text-2xl font-bold">{recentSearches.length}</p>
                                 </div>
                             </div>
                         </div>
