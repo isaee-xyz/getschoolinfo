@@ -28,7 +28,6 @@ const StatusBadge = ({ status, label, value, sub, tooltip }: { status: 'green' |
         <div className={`p-3 rounded-lg border ${colors[status]} flex flex-col items-center text-center`}>
             <span className="text-xs uppercase font-bold tracking-wider opacity-80 mb-1">{label}</span>
             <span className="text-xl font-extrabold mb-1">{value}</span>
-            <span className="text-xl font-extrabold mb-1">{value}</span>
             <span className="text-[10px] opacity-70 mb-2">{sub}</span>
             <InfoTooltip text={tooltip} />
         </div>
@@ -186,6 +185,8 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
     const cleanAddress = decodeHtml(school.address);
     // Fix Co-ed badge (remove leading number if present, e.g. "3-Co-educational")
     const cleanType = school.schTypeDesc ? school.schTypeDesc.replace(/^[0-9]+-/, '') : '';
+    // Fix Board name (remove leading number if present, e.g. "2-State Board")
+    const cleanBoard = school.boardSecName ? school.boardSecName.replace(/^[0-9]+-/, '') : '';
 
     return (
         <>
@@ -219,8 +220,8 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
                                     <div>
                                         <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 leading-tight mb-2 break-words max-w-2xl">{cleanName}</h1>
                                         <div className="flex flex-wrap items-center gap-2 text-sm">
-                                            {school.boardSecName && school.boardSecName !== 'NA' && (
-                                                <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded text-xs font-bold">{school.boardSecName}</span>
+                                            {cleanBoard && cleanBoard !== 'NA' && (
+                                                <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded text-xs font-bold">{cleanBoard}</span>
                                             )}
                                             {cleanType && cleanType !== 'NA' && (
                                                 <span className="px-2 py-0.5 bg-gray-100 text-gray-700 border border-gray-200 rounded text-xs font-bold">{cleanType}</span>
@@ -288,7 +289,7 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
                                 <h2 className="text-xl font-bold text-slate-900 mb-4">About School</h2>
                                 <p className="text-slate-600 leading-relaxed text-sm">
                                     {cleanName} is a {cleanType || 'school'}
-                                    {school.boardSecName && school.boardSecName !== 'NA' ? ` affiliated with ${school.boardSecName}` : ''}.
+                                    {cleanBoard && cleanBoard !== 'NA' ? ` affiliated with ${cleanBoard}` : ''}.
                                     {school.estdYear > 0 ? ` Established in ${school.estdYear}, it` : ' It'} is managed by {school.schMgmtDesc || "Private Management"}.
                                     The school is located in {school.block}, {school.district}
                                     {school.lowClass && school.highClass ? ` and provides education from Class ${school.lowClass} to Class ${school.highClass}` : ''}
