@@ -15,7 +15,78 @@ import {
     GraduationCap, BookOpen, Building, Laptop, Trophy, ImageIcon, Mail, FileCheck, Zap, Wifi, Lock
 } from 'lucide-react';
 
-// ... (helpers) ...
+// ... imports ...
+
+// Helper Components
+const StatusBadge = ({ status, label, value, sub, tooltip }: { status: 'green' | 'yellow' | 'red', label: string, value: string | number, sub: string, tooltip: string }) => {
+    const colors = {
+        green: 'bg-green-50 text-green-700 border-green-200',
+        yellow: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+        red: 'bg-red-50 text-red-700 border-red-200'
+    };
+    return (
+        <div className={`p-3 rounded-lg border ${colors[status]} flex flex-col items-center text-center`}>
+            <span className="text-xs uppercase font-bold tracking-wider opacity-80 mb-1">{label}</span>
+            <span className="text-xl font-extrabold mb-1">{value}</span>
+            <span className="text-xl font-extrabold mb-1">{value}</span>
+            <span className="text-[10px] opacity-70 mb-2">{sub}</span>
+            <InfoTooltip text={tooltip} />
+        </div>
+    );
+};
+
+const AccordionSection = ({ title, icon, defaultOpen, children }: { title: string, icon: React.ReactNode, defaultOpen: boolean, children: React.ReactNode }) => {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
+    return (
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+            >
+                <div className="flex items-center gap-3 font-bold text-slate-800">
+                    {icon}
+                    {title}
+                </div>
+                {isOpen ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+            </button>
+            {isOpen && <div className="p-5 border-t border-gray-100">{children}</div>}
+        </div>
+    );
+};
+
+const InfraIconItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: string | number }) => (
+    <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-100">
+        <div className="text-blue-500">{icon}</div>
+        <div>
+            <p className="text-xs text-gray-500 font-bold uppercase">{label}</p>
+            <p className="font-semibold text-slate-800">{value}</p>
+        </div>
+    </div>
+);
+
+const FeeTable = ({ details }: { details: FeeDetails }) => (
+    <div className="overflow-hidden rounded-lg border border-gray-200">
+        <table className="w-full text-sm text-left">
+            <thead className="bg-slate-50 text-slate-700 font-bold text-xs uppercase">
+                <tr>
+                    <th className="px-4 py-3">Fee Component</th>
+                    <th className="px-4 py-3 text-right">Amount (₹)</th>
+                </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+                <tr><td className="px-4 py-3">Tuition Fee</td><td className="px-4 py-3 text-right">{details.tuitionFeeInRupees?.toLocaleString() || 0}</td></tr>
+                <tr><td className="px-4 py-3">Admission Fee</td><td className="px-4 py-3 text-right">{details.admissionFeeInRupees?.toLocaleString() || 0}</td></tr>
+                <tr><td className="px-4 py-3">Development Charges</td><td className="px-4 py-3 text-right">{details.yearlyDevelopmentChargesInRupees?.toLocaleString() || 0}</td></tr>
+                <tr><td className="px-4 py-3">Other Charges</td><td className="px-4 py-3 text-right">{details.otherChargesInRupees?.toLocaleString() || 0}</td></tr>
+                <tr className="bg-slate-50 font-bold"><td className="px-4 py-3">Total (Annual)</td><td className="px-4 py-3 text-right text-slate-900">{(details.tuitionFeeInRupees + details.admissionFeeInRupees + details.yearlyDevelopmentChargesInRupees + (details.otherChargesInRupees || 0)).toLocaleString()}</td></tr>
+            </tbody>
+        </table>
+    </div>
+);
+
+interface SchoolDetailClientProps {
+    school: any; // Using 'any' to avoid strict type refactoring for now, ideally 'School' type
+}
 
 const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
     const router = useRouter();
@@ -290,7 +361,7 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
                             </AccordionSection>
 
                             {/* Fee Structure - STRICT HIDE IF 0 */}
-                            {school.feeStructure && Object.values(school.feeStructure).some(f =>
+                            {school.feeStructure && Object.values(school.feeStructure).some((f: any) =>
                                 (f.tuitionFeeInRupees + f.admissionFeeInRupees + f.yearlyDevelopmentChargesInRupees) > 0
                             ) ? (
                                 <AccordionSection title="Fee Structure" icon={<GraduationCap className="w-5 h-5 text-purple-500" />} defaultOpen={true}>
@@ -337,7 +408,7 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
                             {school.images?.gallery && school.images.gallery.length > 0 && (
                                 <AccordionSection title="Campus Gallery" icon={<ImageIcon className="w-5 h-5 text-pink-500" />} defaultOpen={true}>
                                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                        {school.images.gallery.map((img, idx) => (
+                                        {school.images.gallery.map((img: string, idx: number) => (
                                             <img key={idx} src={img} alt={`Gallery ${idx + 1}`} className="rounded-lg object-cover h-32 w-full hover:scale-105 transition-transform cursor-pointer" />
                                         ))}
                                     </div>

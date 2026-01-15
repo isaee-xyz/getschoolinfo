@@ -2,6 +2,7 @@ export interface FeeDetails {
   admissionFeeInRupees: number;
   tuitionFeeInRupees: number;
   yearlyDevelopmentChargesInRupees: number;
+  otherChargesInRupees?: number;
   annualMonthlyOtherChargesForOtherFacilitiesInRupees?: number;
 }
 
