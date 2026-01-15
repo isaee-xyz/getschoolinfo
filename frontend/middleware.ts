@@ -31,7 +31,12 @@ export function middleware(request: NextRequest) {
 
     // Feature: Restrict /sitemap.xml and /sitemaps/* to Search Engines only
     if (request.nextUrl.pathname === '/sitemap.xml' || request.nextUrl.pathname.startsWith('/sitemaps/')) {
-        const allowedBots = ['googlebot', 'bingbot', 'slurp', 'duckduckbot', 'baiduspider', 'yandexbot', 'sogou', 'gptbot'];
+        const allowedBots = [
+            'googlebot', 'bingbot', 'slurp', 'duckduckbot', 'baiduspider', 'yandexbot', 'sogou', 'gptbot',
+            'applebot', 'facebot', 'facebookexternalhit', 'twitterbot', 'linkedinbot', 'slackbot-linkexpanding',
+            'discordbot', 'whatsapp', 'telegrambot', 'pinterest',
+            'ccbot', 'claude-web', 'anthropic-ai', 'cohere-ai', 'omgilibot'
+        ];
         // Allow bots OR standard browsers (Mozilla is present in almost all browser UAs)
         // This blocks scripts like python-requests, curl, etc. unless they spoof headers.
         const isAllowed = allowedBots.some(bot => ua.includes(bot)) || ua.includes('mozilla');
