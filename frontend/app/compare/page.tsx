@@ -26,7 +26,8 @@ function CompareContent() {
     const [activeTab, setActiveTab] = useState<'all' | 'fees' | 'infra' | 'safety'>('all');
 
     // Logic: Merge context list with URL params if any
-    const urlIds = searchParams.get('ids')?.split(',') || [];
+    // Support both underscore (new) and comma (old/fallback) for robustness
+    const urlIds = searchParams.get('ids')?.split(/[_]/) || [];
 
     // Create a combined unique set of IDs to display
     // Prioritize URL IDs if they exist (shared view), otherwise store
@@ -59,12 +60,12 @@ function CompareContent() {
             }
         };
         fetchSchools();
-    }, [displayIds.join(',')]); // Re-run if IDs change
+    }, [displayIds.join('_')]); // Re-run if IDs change
 
     const handleShare = () => {
         // In Next.js, we construct the URL. 
         // Assuming the page is /compare
-        const url = `${window.location.origin}/compare?ids=${displayIds.join(',')}`;
+        const url = `${window.location.origin}/compare?ids=${displayIds.join('_')}`;
         navigator.clipboard.writeText(url);
         alert('Comparison link copied to clipboard!');
     };
