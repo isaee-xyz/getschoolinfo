@@ -21,6 +21,9 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/schema.sql ./
 COPY --from=builder /app/schema_derived.sql ./
 COPY --from=builder /app/service-account.json ./service-account.json
+# Copy seed data and script for remote seeding
+COPY --from=builder /app/dist/seed.js ./dist/seed.js
+COPY ["Schools get.json", "./"]
 
 EXPOSE 4000
 

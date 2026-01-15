@@ -1,0 +1,22 @@
+name: Seed Production Database
+
+on:
+  workflow_dispatch:
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Exec Seed Script on Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: root
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+             cd /root/getschoolinfo
+             echo "🌱 Starting Remote Seeding inside Backend container..."
+             # We use the seed script embedded in the image
+             # The file path in the container is ./Schools get.json (WORKDIR /app)
+             docker compose -f docker-compose.prod.yml exec -T backend node dist/seed.js "Schools get.json"
+             echo "✅ Seeding Command Executed."
