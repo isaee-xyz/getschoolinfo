@@ -30,7 +30,9 @@ jobs:
           host: ${{ secrets.PROD_HOST }}
           username: root
           key: ${{ secrets.PROD_SSH_KEY }}
+          command_timeout: 45m # Increase timeout to 45 minutes
           script: |
+             set -e # Fail fast
              cd /root/getschoolinfo/backend
              
              echo "📂 Debug: Listing files..."
@@ -44,8 +46,9 @@ jobs:
              docker cp schools_temp.json school-portal-backend-prod:/app/schools_temp.json
              rm schools_temp.json
              
-             echo "🚀 Running Seeder..."
-             docker exec school-portal-backend-prod node dist/seed.js schools_temp.json
+             echo "🚀 Running Seeder (Max Memory: 4GB)..."
+             # Use --max-old-space-size to prevent OOM on large JSON
+             docker exec school-portal-backend-prod node --max-old-space-size=4096 dist/seed.js schools_temp.json
              
              echo "🧹 Cleanup..."
              docker exec school-portal-backend-prod rm schools_temp.json
