@@ -16,10 +16,11 @@ fi
 echo "🚀 Deploying to $TARGET_IP..."
 
 # Copy Data File if present locally
-if [ -f "All District Data.json" ]; then
-    echo "Transferring data file..."
-    scp -i ~/.ssh/id_ed25519_howtohelp "All District Data.json" "$USER@$TARGET_IP:/root/"
-fi
+# Copy Data File if present locally
+# if [ -f "All District Data.json" ]; then
+#     echo "Transferring data file..."
+#     scp -i ~/.ssh/id_ed25519_howtohelp "All District Data.json" "$USER@$TARGET_IP:/root/"
+# fi
 
 # Check for DB_PASSWORD env var or arg
 if [ -z "$DB_PASSWORD" ]; then
@@ -70,14 +71,15 @@ ENV
   sleep 10
 
   # Copy Data file to backend container
-  if [ -f "/root/All District Data.json" ]; then
-      docker cp "/root/All District Data.json" school-portal-backend-prod:/All_District_Data.json
+  # Copy Data file to backend container
+  # if [ -f "/root/All District Data.json" ]; then
+  #     docker cp "/root/All District Data.json" school-portal-backend-prod:/All_District_Data.json
       
-      echo "Seeding Database..."
-      docker exec school-portal-backend-prod npx ts-node seed.ts /All_District_Data.json
-  else
-      echo "⚠️ Data file not found on server. Skipping seed."
-  fi
+  #     echo "Seeding Database..."
+  #     docker exec school-portal-backend-prod npx ts-node seed.ts /All_District_Data.json
+  # else
+  #     echo "⚠️ Data file not found on server. Skipping seed."
+  # fi
 
   echo "✅ Deployment Complete!"
 EOF

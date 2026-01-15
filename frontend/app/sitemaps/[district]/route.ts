@@ -4,10 +4,11 @@ import { School } from '@/types';
 export const dynamic = 'force-dynamic';
 export const revalidate = 3600;
 
-export async function GET(request: NextRequest) {
-    const searchParams = request.nextUrl.searchParams;
-    const districtSlug = searchParams.get('district'); // e.g., 'buldana' from rewrite
+export async function GET(request: NextRequest, { params }: { params: { district: string } }) {
+    const { district } = params;
+    const districtSlug = district; // e.g., 'agar-malwa'
 
+    const searchParams = request.nextUrl.searchParams;
     // SECURITY: Only allow access with a secret token for now
     const token = searchParams.get('token');
     if (token !== 'preview') {

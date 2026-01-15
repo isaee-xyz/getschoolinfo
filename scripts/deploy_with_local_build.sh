@@ -26,6 +26,7 @@ echo "------------------------------------------------"
 echo "📦 Building Frontend (targeting linux/amd64)..."
 docker buildx build --platform linux/amd64 \
   --build-arg NEXT_PUBLIC_API_URL=https://getschoolsinfo.com/api \
+  --build-arg NEXT_PUBLIC_APP_ENV=production \
   -t getschoolinfo-frontend:latest -f frontend/Dockerfile.prod frontend
 if [ $? -ne 0 ]; then echo "❌ Frontend build failed"; exit 1; fi
 
@@ -50,9 +51,9 @@ scp -i ~/.ssh/id_ed25519_howtohelp Caddyfile "$USER@$TARGET_IP:/root/$PROJECT_DI
 if [ -f "backend/service-account.json" ]; then
     scp -i ~/.ssh/id_ed25519_howtohelp "backend/service-account.json" "$USER@$TARGET_IP:/root/$PROJECT_DIR/backend/"
 fi
-if [ -f "All District Data.json" ]; then
-     scp -i ~/.ssh/id_ed25519_howtohelp "All District Data.json" "$USER@$TARGET_IP:/root/"
-fi
+# if [ -f "All District Data.json" ]; then
+#      scp -i ~/.ssh/id_ed25519_howtohelp "All District Data.json" "$USER@$TARGET_IP:/root/"
+# fi
 
 # 5. Remote Execution
 echo "------------------------------------------------"
@@ -91,10 +92,11 @@ ssh -i ~/.ssh/id_ed25519_howtohelp -o StrictHostKeyChecking=no "$USER@$TARGET_IP
   sleep 10
 
   # Seeding
-  if [ -f "/root/All District Data.json" ]; then
-       docker cp "/root/All District Data.json" school-portal-backend-prod:/All_District_Data.json
-       docker exec school-portal-backend-prod npx ts-node seed.ts /All_District_Data.json
-  fi
+  # Seeding
+  # if [ -f "/root/All District Data.json" ]; then
+  #      docker cp "/root/All District Data.json" school-portal-backend-prod:/All_District_Data.json
+  #      docker exec school-portal-backend-prod npx ts-node seed.ts /All_District_Data.json
+  # fi
   
   # Clean up huge tar file
   rm /root/deployment_images.tar.gz
