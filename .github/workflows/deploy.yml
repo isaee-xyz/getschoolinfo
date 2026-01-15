@@ -42,6 +42,9 @@ jobs:
             # If you don't have a staging domain yet, you might want to adjust this
           fi
 
+      - name: Create Service Account File
+        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' > ./backend/service-account.json
+
       - name: Build and push Backend
         uses: docker/build-push-action@v5
         with:
