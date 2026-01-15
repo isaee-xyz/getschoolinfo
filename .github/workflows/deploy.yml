@@ -1,0 +1,136 @@
+name: Deploy Multi-Environment
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+
+env:
+  REGISTRY: ghcr.io
+  # Correct repo name must be set here or derived dynamically
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set Environment Variables
+        id: env-vars
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "TAG=main" >> $GITHUB_OUTPUT
+            echo "APP_ENV=production" >> $GITHUB_OUTPUT
+            echo "API_URL=https://getschoolsinfo.com/api" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
+            echo "TAG=staging" >> $GITHUB_OUTPUT
+            echo "APP_ENV=staging" >> $GITHUB_OUTPUT
+            echo "API_URL=https://staging.getschoolsinfo.com/api" >> $GITHUB_OUTPUT
+            # If you don't have a staging domain yet, you might want to adjust this
+          fi
+
+      - name: Build and push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile.prod
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${{ steps.env-vars.outputs.TAG }}
+
+      - name: Build and push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile.prod
+          push: true
+          build-args: |
+             NEXT_PUBLIC_API_URL=${{ steps.env-vars.outputs.API_URL }}
+             NEXT_PUBLIC_APP_ENV=${{ steps.env-vars.outputs.APP_ENV }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:${{ steps.env-vars.outputs.TAG }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    steps:
+      - name: Set Deployment Config
+        id: config
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+             echo "HOST=${{ secrets.PROD_HOST }}" >> $GITHUB_OUTPUT
+             echo "SSH_KEY=${{ secrets.PROD_SSH_KEY }}" >> $GITHUB_OUTPUT
+             echo "ENV_CONTENT<<EOF" >> $GITHUB_OUTPUT
+             echo "${{ secrets.PROD_ENV }}" >> $GITHUB_OUTPUT
+             echo "EOF" >> $GITHUB_OUTPUT
+             echo "TAG=main" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
+             echo "HOST=${{ secrets.STAGING_HOST }}" >> $GITHUB_OUTPUT
+             echo "SSH_KEY=${{ secrets.STAGING_SSH_KEY }}" >> $GITHUB_OUTPUT
+             echo "ENV_CONTENT<<EOF" >> $GITHUB_OUTPUT
+             echo "${{ secrets.STAGING_ENV }}" >> $GITHUB_OUTPUT
+             echo "EOF" >> $GITHUB_OUTPUT
+             echo "TAG=staging" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ steps.config.outputs.HOST }}
+          username: root
+          key: ${{ steps.config.outputs.SSH_KEY }}
+          script: |
+            # Ensure project directory exists
+            mkdir -p getschoolinfo
+            cd getschoolinfo
+            
+            # We need the docker-compose.prod.yml
+            # Ideally we check it out or download it. 
+            # For now, let's assume it's there or we curl it from raw github content?
+            # Better: The 'checkout' step in a self-hosted runner would do this, but here we are remote.
+            # We can upload the compose file from the runner to the server.
+            
+      - name: Checkout for Compose File
+        uses: actions/checkout@v4
+
+      - name: Copy Compose File to Server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ steps.config.outputs.HOST }}
+          username: root
+          key: ${{ steps.config.outputs.SSH_KEY }}
+          source: "docker-compose.prod.yml,Caddyfile"
+          target: "/root/getschoolinfo/"
+
+      - name: Finalize Deployment
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ steps.config.outputs.HOST }}
+          username: root
+          key: ${{ steps.config.outputs.SSH_KEY }}
+          script: |
+            cd /root/getschoolinfo
+            
+            # Export TAG for docker-compose interpolation
+            export IMAGE_TAG=${{ steps.config.outputs.TAG }}
+            
+            # Write .env from secret
+            echo "${{ steps.config.outputs.ENV_CONTENT }}" > .env
+            
+            # Pull and Restart
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d
+            
+            # Cleanup unused images
+            docker image prune -f

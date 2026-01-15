@@ -18,12 +18,7 @@ services:
       - app-network
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.prod
-      args:
-        - NEXT_PUBLIC_APP_ENV=production
-        - NEXT_PUBLIC_API_URL=https://getschoolsinfo.com/api
+    image: ghcr.io/isaee-xyz/getschoolinfo-frontend:${IMAGE_TAG:-main}
     container_name: school-portal-frontend-prod
     restart: always
     expose:
@@ -37,9 +32,7 @@ services:
       - app-network
 
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile.prod
+    image: ghcr.io/isaee-xyz/getschoolinfo-backend:${IMAGE_TAG:-main}
     container_name: school-portal-backend-prod
     restart: always
     ports:
