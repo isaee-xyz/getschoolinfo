@@ -29,17 +29,18 @@ export default function DashboardPage() {
                 return;
             }
             try {
-                // Fetching all schools (Temporary solution until ID-based search API is available)
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/schools`);
-                if (!res.ok) throw new Error("Failed to fetch");
+                // Fetch each school individually to ensure we get specific records regardless of pagination
+                const promises = shortlist.map(id =>
+                    fetch(`${process.env.NEXT_PUBLIC_API_URL}/school/${id}`)
+                        .then(res => res.ok ? res.json() : null)
+                        .catch(err => {
+                            console.error(`Failed to fetch shortlisted school ${id}`, err);
+                            return null;
+                        })
+                );
 
-                const rawData = await res.json();
-                const allSchools = Array.isArray(rawData) ? rawData.map((s: any) => ({
-                    ...s,
-                    id: String(s.id || s._id || s.udise_code || Math.random())
-                })) : [];
-
-                setSavedSchools(allSchools.filter(s => shortlist.includes(s.id)));
+                const results = await Promise.all(promises);
+                setSavedSchools(results.filter(s => s !== null));
             } catch (err) {
                 console.error("Error fetching shortlisted schools:", err);
             } finally {
@@ -104,7 +105,7 @@ export default function DashboardPage() {
                             </div>
 
                             {/* Compare Stat (Clickable) */}
-                            <Link href="/compare" className="block group">
+                            <Link href={compareList.length > 0 ? `/compare?ids=${compareList.join(',')}` : '/compare'} className="block group">
                                 <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/10 flex items-center gap-4 transition-transform group-hover:scale-105 group-hover:bg-white/20">
                                     <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center text-white">
                                         <TrendingUp className="w-6 h-6" />

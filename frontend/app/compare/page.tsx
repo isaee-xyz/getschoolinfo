@@ -35,21 +35,25 @@ function CompareContent() {
 
     useEffect(() => {
         const fetchSchools = async () => {
-            if (displayIds.length === 0) return;
+            if (displayIds.length === 0) {
+                setSchools([]);
+                return;
+            }
             try {
-                // Fetch all schools and filter (Optimization: Implement /api/schools?ids=... in future)
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/schools`);
-                if (!res.ok) throw new Error("Failed to fetch");
+                // Fetch each school individually to ensure we get the specific records
+                // The /api/school/:slug endpoint supports lookup by UDISE/ID
+                const promises = displayIds.map(id =>
+                    fetch(`${process.env.NEXT_PUBLIC_API_URL}/school/${id}`)
+                        .then(res => res.ok ? res.json() : null)
+                        .catch(err => {
+                            console.error(`Failed to fetch school ${id}`, err);
+                            return null;
+                        })
+                );
 
-                const rawData = await res.json();
-
-                // Map raw data to ensure 'id' property exists (matching Search Page logic)
-                const allSchools: School[] = Array.isArray(rawData) ? rawData.map((s: any) => ({
-                    ...s,
-                    id: String(s.id || s._id || s.udise_code || Math.random())
-                })) : [];
-
-                setSchools(allSchools.filter(s => displayIds.includes(String(s.id))));
+                const results = await Promise.all(promises);
+                // Filter out nulls (failed fetches)
+                setSchools(results.filter(s => s !== null));
             } catch (err) {
                 console.error("Error fetching compare schools:", err);
             }

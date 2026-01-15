@@ -48,7 +48,7 @@ const options: swaggerJsdoc.Options = {
                     description: 'Represents a school entity with flat and derived properties.',
                     properties: {
                         udise_code: { type: 'string', example: '03010100101', description: 'Unique 11-digit UDISE code' },
-                        id: { type: 'string', example: '03010100101' },
+                        id: { type: 'string', example: '03010100101', description: 'Mapped from UDISE Code (Primary Key)' },
                         slug: { type: 'string', example: 'govt-high-school-bathinda-030101', description: 'URL-friendly identifier' },
                         name: { type: 'string', example: 'Govt High School' },
 
@@ -60,8 +60,8 @@ const options: swaggerJsdoc.Options = {
                         pincode: { type: 'integer', example: 151001 },
                         latitude: { type: 'number', example: 30.2109 },
                         longitude: { type: 'number', example: 74.9455 },
-                        lat: { type: 'number', example: 30.2109 },
-                        lng: { type: 'number', example: 74.9455 },
+                        lat: { type: 'number', example: 30.2109, description: 'Frontend Alias for latitude' },
+                        lng: { type: 'number', example: 74.9455, description: 'Frontend Alias for longitude' },
 
                         // Core Attributes
                         board: { type: 'string', example: 'CBSE' },

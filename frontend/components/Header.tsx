@@ -37,7 +37,7 @@ const Header: React.FC = () => {
         {/* Actions */}
         <div className="flex items-center gap-3 md:gap-4">
 
-          <Link href="/compare" className="relative p-2 text-slate-600 hover:text-blue-600 transition-colors" title="Compare Schools">
+          <Link href={compareList.length > 0 ? `/compare?ids=${compareList.join(',')}` : '/compare'} className="relative p-2 text-slate-600 hover:text-blue-600 transition-colors" title="Compare Schools">
             <Scale className="w-6 h-6" />
             {compareList.length > 0 && (
               <span className="absolute top-0 right-0 w-4 h-4 bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center rounded-full">
