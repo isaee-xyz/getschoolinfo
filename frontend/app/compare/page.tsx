@@ -73,11 +73,11 @@ function CompareContent() {
             title: 'Basic Information',
             show: activeTab === 'all',
             rows: [
-                { label: 'Board', render: (s: School) => s.boardSecName },
-                { label: 'Type', render: (s: School) => s.schTypeDesc },
-                { label: 'Grades', render: (s: School) => `${s.lowClass} - ${s.highClass}` },
-                { label: 'Medium', render: (s: School) => s.mediumOfInstrName1 },
-                { label: 'Established', render: (s: School) => s.yearDesc },
+                { label: 'Board', render: (s: School) => s.boardSecName || 'N/A' },
+                { label: 'Type', render: (s: School) => s.schTypeDesc || 'N/A' },
+                { label: 'Grades', render: (s: School) => `${s.lowClass || '?'} - ${s.highClass || '?'}` },
+                { label: 'Medium', render: (s: School) => s.mediumOfInstrName1 || 'N/A' },
+                { label: 'Established', render: (s: School) => s.yearDesc || s.estdYear || 'N/A' },
             ]
         },
         {
@@ -85,14 +85,14 @@ function CompareContent() {
             title: 'Annual Fees',
             show: activeTab === 'all' || activeTab === 'fees',
             rows: [
-                { label: 'Admission (One-time)', render: (s: School) => `₹${s.admissionFeeInRupees.toLocaleString()}` },
-                { label: 'Tuition', render: (s: School) => `₹${s.tuitionFeeInRupees.toLocaleString()}` },
-                { label: 'Dev. Charges', render: (s: School) => `₹${s.yearlyDevelopmentChargesInRupees.toLocaleString()}` },
-                { label: 'Other Annual', render: (s: School) => `₹${(s.annualMonthlyOtherCharges * 12).toLocaleString()}` },
+                { label: 'Admission (One-time)', render: (s: School) => `₹${(s.admissionFeeInRupees || 0).toLocaleString()}` },
+                { label: 'Tuition', render: (s: School) => `₹${(s.tuitionFeeInRupees || 0).toLocaleString()}` },
+                { label: 'Dev. Charges', render: (s: School) => `₹${(s.yearlyDevelopmentChargesInRupees || 0).toLocaleString()}` },
+                { label: 'Other Annual', render: (s: School) => `₹${((s.annualMonthlyOtherCharges || 0) * 12).toLocaleString()}` },
                 {
                     label: 'Total Annual',
                     isBold: true,
-                    render: (s: School) => `₹${(s.tuitionFeeInRupees + s.yearlyDevelopmentChargesInRupees + (s.annualMonthlyOtherCharges * 12)).toLocaleString()}`
+                    render: (s: School) => `₹${((s.tuitionFeeInRupees || 0) + (s.yearlyDevelopmentChargesInRupees || 0) + ((s.annualMonthlyOtherCharges || 0) * 12)).toLocaleString()}`
                 },
             ]
         },
@@ -101,9 +101,9 @@ function CompareContent() {
             title: 'Infrastructure & Ratios',
             show: activeTab === 'all' || activeTab === 'infra',
             rows: [
-                { label: 'Student:Teacher', render: (s: School) => `1 : ${Math.round(s.rowTotal / s.totalTeacher)}` },
-                { label: 'Smart Boards', render: (s: School) => s.digiBoardTot },
-                { label: 'Computers', render: (s: School) => s.desktopFun + s.laptopTot },
+                { label: 'Student:Teacher', render: (s: School) => s.totalTeacher ? `1 : ${Math.round((s.rowTotal || 0) / s.totalTeacher)}` : 'N/A' },
+                { label: 'Smart Boards', render: (s: School) => s.digiBoardTot || 0 },
+                { label: 'Computers', render: (s: School) => (s.desktopFun || 0) + (s.laptopTot || 0) },
                 { label: 'Library', render: (s: School) => <BoolIcon val={s.libraryYnDesc === 'Yes'} /> },
                 { label: 'Playground', render: (s: School) => <BoolIcon val={s.playgroundYnDesc === 'Yes'} /> },
                 { label: 'Internet', render: (s: School) => <BoolIcon val={s.internetYnDesc === 'Yes'} /> },
@@ -114,11 +114,11 @@ function CompareContent() {
             title: 'Safety & Hygiene',
             show: activeTab === 'all' || activeTab === 'safety',
             rows: [
-                { label: 'Perimeter Wall', render: (s: School) => s.bndrywallType },
+                { label: 'Perimeter Wall', render: (s: School) => s.bndrywallType || 'N/A' },
                 { label: 'Fire Safety', render: (s: School) => <BoolIcon val={s.fireSafetyYn === 1} /> },
                 { label: 'Medical Check', render: (s: School) => <BoolIcon val={s.medchkYnDesc === 'Yes'} /> },
-                { label: 'Girls Toilets', render: (s: School) => s.toiletgFun },
-                { label: 'CWSN Toilets', render: (s: School) => s.toiletbCwsnFun },
+                { label: 'Girls Toilets', render: (s: School) => s.toiletgFun || 0 },
+                { label: 'CWSN Toilets', render: (s: School) => s.toiletbCwsnFun || 0 },
             ]
         }
     ];
@@ -170,19 +170,19 @@ function CompareContent() {
                                         <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Metric</span>
                                     </th>
                                     {schools.map(school => (
-                                        <th key={school.id} className="p-4 min-w-[250px] align-top bg-white border-b border-gray-100">
+                                        <th key={school.id || Math.random()} className="p-4 min-w-[250px] align-top bg-white border-b border-gray-100">
                                             <div className="relative">
                                                 <button
-                                                    onClick={() => removeItem(school.id)}
+                                                    onClick={() => school.id && removeItem(school.id)}
                                                     className="absolute -top-2 -right-2 p-1 text-gray-300 hover:text-red-500"
                                                 >
                                                     <XCircle className="w-5 h-5" />
                                                 </button>
-                                                <img src={school.image} alt={school.name} className="w-16 h-12 object-cover rounded mb-2" />
-                                                <Link href={`/${school.district.toLowerCase().replace(/\s+/g, '-')}/${school.slug || 'school-' + school.id}`} className="block font-bold text-slate-900 hover:text-blue-600 mb-1">
-                                                    {school.name}
+                                                <img src={school.image || '/default-school.jpg'} alt={school.name || 'School'} className="w-full h-32 object-cover rounded mb-2" onError={(e) => (e.target as HTMLImageElement).src = '/default-school.jpg'} />
+                                                <Link href={`/${(school.district || 'district').toLowerCase().replace(/\s+/g, '-')}/${school.slug || 'school-' + school.id}`} className="block font-bold text-slate-900 hover:text-blue-600 mb-1">
+                                                    {school.name || 'Unknown School'}
                                                 </Link>
-                                                <p className="text-xs text-slate-500">{school.district}</p>
+                                                <p className="text-xs text-slate-500">{school.district || 'Unknown District'}</p>
                                             </div>
                                         </th>
                                     ))}
@@ -202,7 +202,7 @@ function CompareContent() {
                                                     {row.label}
                                                 </td>
                                                 {schools.map(school => (
-                                                    <td key={school.id} className={`p-4 py-3 text-slate-800 ${row.isBold ? 'font-bold' : ''}`}>
+                                                    <td key={school.id || Math.random()} className={`p-4 py-3 text-slate-800 ${row.isBold ? 'font-bold' : ''}`}>
                                                         {row.render(school)}
                                                     </td>
                                                 ))}

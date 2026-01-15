@@ -149,9 +149,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const loginWithGoogle = async () => {
         try {
             await signInWithPopup(auth, googleProvider);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Login failed:", error);
-            throw error;
+            if (error?.code === 'auth/unauthorized-domain') {
+                console.error("FIREBASE ERROR: Domain not authorized. Add 'getschoolsinfo.com' to Firebase Console > Authentication > Settings > Authorized Domains.");
+            }
+            throw error; // Re-throw for UI to handle
         }
     };
 

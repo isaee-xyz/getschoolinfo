@@ -61,11 +61,11 @@ export default function Home() {
         {/* Hero Section */}
         <section className="bg-linear-to-b from-blue-50 to-white py-20 px-4">
           <div className="container mx-auto max-w-4xl text-center">
-            <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6 leading-tight">
-              Make Informed School Choices <span className="text-blue-600 block mt-2">for Your Child</span>
+            <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 mb-6 leading-tight max-w-4xl mx-auto">
+              Make Informed School Choices for Your Child
             </h1>
-            <p className="text-lg md:text-xl text-slate-600 mb-10 max-w-2xl mx-auto">
-              Don't guess. Check Teacher Quality, Hygiene Stats, and Hidden Fees before you apply.
+            <p className="text-lg md:text-xl text-blue-600 font-bold mb-10 max-w-3xl mx-auto">
+              <span className="font-mono">{displayCount > 0 ? displayCount.toLocaleString() : '38,312'}+</span> Schools <span className="mx-2">|</span> Objective Quality Scores <span className="mx-2">|</span> Zero Guesswork
             </p>
 
             {/* Existing Search Box ... */}

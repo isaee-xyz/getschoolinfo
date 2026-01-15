@@ -92,6 +92,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     const toggleCompare = (id: string) => {
+        if (!id) {
+            console.warn("Attempted to toggle compare with invalid ID");
+            return;
+        }
         setCompareList(prev => {
             if (prev.includes(id)) {
                 return prev.filter(item => item !== id);
