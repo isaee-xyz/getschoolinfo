@@ -27,23 +27,52 @@ export function middleware(request: NextRequest) {
     const ua = request.headers.get('user-agent')?.toLowerCase() || '';
     const ip = (request as any).ip || request.headers.get('x-forwarded-for') || '127.0.0.1';
 
-    // --- Check 1: Bot Blocking & Sitemap Protection ---
+    // --- Phase 1: Global Bot & Scraper Management ---
 
-    // Feature: Restrict /sitemap.xml and /sitemaps/* to Search Engines only
-    if (request.nextUrl.pathname === '/sitemap.xml' || request.nextUrl.pathname.startsWith('/sitemaps/')) {
-        const allowedBots = [
-            'googlebot', 'bingbot', 'slurp', 'duckduckbot', 'baiduspider', 'yandexbot', 'sogou', 'gptbot',
-            'applebot', 'facebot', 'facebookexternalhit', 'twitterbot', 'linkedinbot', 'slackbot-linkexpanding',
-            'discordbot', 'whatsapp', 'telegrambot', 'pinterest',
-            'ccbot', 'claude-web', 'anthropic-ai', 'cohere-ai', 'omgilibot'
-        ];
-        // Allow bots OR standard browsers (Mozilla is present in almost all browser UAs)
-        // This blocks scripts like python-requests, curl, etc. unless they spoof headers.
-        const isAllowed = allowedBots.some(bot => ua.includes(bot)) || ua.includes('mozilla');
+    // 1. Explicit Whitelist (Search Engines, AI, Social, Monitoring)
+    // These bypass strict browser integrity checks but are still rate-limited reasonably.
+    const ALLOWED_BOTS = [
+        'googlebot', 'bingbot', 'slurp', 'duckduckbot', 'baiduspider', 'yandexbot', 'sogou', 'gptbot', // Search
+        'applebot', 'facebot', 'facebookexternalhit', 'twitterbot', 'linkedinbot', 'slackbot', 'discordbot', // Social
+        'whatsapp', 'telegrambot', 'pinterest', 'redditbot',
+        'ccbot', 'claude-web', 'anthropic-ai', 'cohere-ai', 'omgilibot', 'perplexitybot', 'diffbot', // AI
+        'uptime', 'monitor' // Monitoring
+    ];
 
-        if (!isAllowed) {
-            // Optional: return 404 to hide it, or 403 to explicitly deny
-            return new NextResponse('Access Denied: Sitemap is restricted to search engine bots.', { status: 403 });
+    const isWhitelisted = ALLOWED_BOTS.some(bot => ua.includes(bot));
+
+    // 2. Explicit Blocklist (Known Scrapers / Abuse Tools)
+    if (BAD_BOT_AGENTS.some(bot => ua.includes(bot))) {
+        return new NextResponse('Access Denied: Automated access restricted.', { status: 403 });
+    }
+
+    // 3. Automated Browser / Headless Detection (For Non-Whitelisted Clients)
+    if (!isWhitelisted) {
+        // A. Headless Signals
+        const hasAcceptLanguage = request.headers.has('accept-language');
+        const isHeadless =
+            ua.includes('headlesschrome') ||
+            ua.includes('phantomjs') ||
+            ua.includes('selenium') ||
+            !hasAcceptLanguage; // Real browsers ALMOST always send this
+
+        if (isHeadless) {
+            return new NextResponse('Access Denied: Browser integrity check failed.', { status: 403 });
+        }
+
+        // B. API Direct Access Prevention (Referer Check)
+        // If hitting /api/ endpoints, must come from our own frontend (or match allowed origins)
+        if (request.nextUrl.pathname.startsWith('/api/')) {
+            const referer = request.headers.get('referer') || '';
+            const origin = request.headers.get('origin') || '';
+            const host = request.headers.get('host') || '';
+
+            const hasRefererOrOrigin = referer || origin;
+            const isSameOrigin = (referer && referer.includes(host)) || (origin && origin.includes(host));
+
+            if (!hasRefererOrOrigin || !isSameOrigin) {
+                return new NextResponse('Access Denied: Direct API access restricted.', { status: 403 });
+            }
         }
     }
 
