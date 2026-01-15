@@ -5,13 +5,12 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 3600;
 
 export async function GET(request: NextRequest) {
-    // SECURITY: Only allow access with a secret token for now
-    const url = new URL(request.url);
-    const token = url.searchParams.get('token');
-
-    if (token !== 'preview') {
-        return new Response('Not Found', { status: 404 });
-    }
+    // SECURITY: Handled by middleware (bots allowed, scrapers blocked)
+    // const url = new URL(request.url);
+    // const token = url.searchParams.get('token');
+    // if (token !== 'preview') {
+    //    return new Response('Not Found', { status: 404 });
+    // }
 
     const baseUrl = 'https://getschoolsinfo.com';
     const apiUrl = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
