@@ -5,9 +5,6 @@ import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useLocations } from '@/hooks/useLocations';
-import { ShieldCheck, Database, GraduationCap, IndianRupee, Trophy, Building2 } from 'lucide-react';
-
-// ... imports ...
 import { ShieldCheck, Database, GraduationCap, IndianRupee, Trophy, Building2, MapPin, RefreshCw } from 'lucide-react';
 
 export default function Home() {
