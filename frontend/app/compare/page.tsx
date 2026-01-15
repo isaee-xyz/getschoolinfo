@@ -69,9 +69,10 @@ function CompareContent() {
 
     const handleShare = () => {
         // In Next.js, we construct the URL. 
-        // Use indexed parameters: id_1, id_2, id_3
+        // Use indexed parameters: id_1, id_2, id_3, SORTED for consistency
         const params = new URLSearchParams();
-        displayIds.forEach((id, index) => params.append(`id_${index + 1}`, id));
+        const sortedIds = [...displayIds].sort();
+        sortedIds.forEach((id, index) => params.append(`id_${index + 1}`, id));
         const url = `${window.location.origin}/compare?${params.toString()}`;
         navigator.clipboard.writeText(url);
         alert('Comparison link copied to clipboard!');
