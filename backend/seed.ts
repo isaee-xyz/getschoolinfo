@@ -38,6 +38,44 @@ async function seed() {
         const schools = JSON.parse(rawData);
         console.log(`📊 Found ${schools.length} schools to import.`);
 
+        // 0A. Fix Schema (Auto-Migration)
+        // ensure stats columns are 10,2 to prevent overflow (some legacy setups have 5,2)
+        try {
+            console.log("🛠️ Checking/Fixing Schema Column Types...");
+            await pool.query(`
+                ALTER TABLE school_stats 
+                ALTER COLUMN student_teacher_ratio TYPE DECIMAL(10, 2),
+                ALTER COLUMN gender_parity_index TYPE DECIMAL(10, 2),
+                ALTER COLUMN bed_qualification_pct TYPE DECIMAL(10, 2),
+                ALTER COLUMN teacher_training_pct TYPE DECIMAL(10, 2),
+                ALTER COLUMN regular_teacher_pct TYPE DECIMAL(10, 2),
+                ALTER COLUMN students_per_classroom TYPE DECIMAL(10, 2),
+                ALTER COLUMN boys_toilets_per_1000 TYPE DECIMAL(10, 2),
+                ALTER COLUMN girls_toilets_per_1000 TYPE DECIMAL(10, 2),
+                ALTER COLUMN furniture_availability_pct TYPE DECIMAL(10, 2),
+                ALTER COLUMN instructional_days_pct TYPE DECIMAL(10, 2),
+                ALTER COLUMN post_graduate_pct TYPE DECIMAL(10, 2),
+                ALTER COLUMN devices_per_100 TYPE DECIMAL(10, 2),
+                ALTER COLUMN displays_per_classroom TYPE DECIMAL(10, 2);
+            `);
+            console.log("✅ Schema columns upgraded to DECIMAL(10, 2).");
+        } catch (e) {
+            console.log("⚠️ Schema update skipped (likely already correct or table missing):", e);
+        }
+
+        // 0. Fetch Valid Columns AND Types from DB
+        const schemaRes = await pool.query(`
+            SELECT column_name, data_type, udt_name
+            FROM information_schema.columns 
+            WHERE table_name = 'schools'
+        `);
+
+        const columnTypes = new Map<string, string>();
+        for (const r of schemaRes.rows) {
+            columnTypes.set(r.column_name, r.data_type === 'USER-DEFINED' ? r.udt_name : r.data_type);
+        }
+        console.log(`✅ Loaded ${columnTypes.size} columns with types.`);
+
         // 3. Insert Data
         let successCount = 0;
         for (const s of schools) {
@@ -104,9 +142,8 @@ async function seed() {
 
                 // 1. Get all keys from school object
                 const keys = Object.keys(schoolObj).filter(k =>
-                    k !== '_id' &&
-                    !k.toLowerCase().includes('genius') &&
-                    schoolObj[k] !== undefined
+                    columnTypes.has(k) && // ONLY allow keys that exist in DB
+                    k !== 'udise_code' && k !== 'udiseschCode' // Handle PK separate
                 );
 
                 // Let's normalize keys
@@ -116,14 +153,78 @@ async function seed() {
                 // Handle PK explicitly if potential mismatch
                 let finalUdiseCode = schoolObj.udise_code || schoolObj.udiseschCode;
 
-                for (const k of keys) {
-                    if (k === 'udise_code' || k === 'udiseschCode') continue; // Handle PK separate
+                function safeInt(val: any): number {
+                    const num = parseInt(val, 10);
+                    if (isNaN(num)) return 0;
+                    if (num > 2147483647) return 2147483647;
+                    if (num < -2147483648) return -2147483648;
+                    return num;
+                }
 
+                function safeBigInt(val: any): string {
+                    // JS parsInt is unsafe for large BigInts, use string handling
+                    if (!val) return '0';
+                    // Verify digits
+                    const str = String(val).replace(/[^0-9]/g, '');
+                    // Postgres BIGINT max is 9223372036854775807 (19 digits)
+                    // If too long, truncate or 0? Truncate to 18 digits to be safe
+                    if (str.length > 18) return str.substring(0, 18);
+                    return str || '0';
+                }
+
+                function safeSmallInt(val: any): number {
+                    const num = parseInt(val, 10);
+                    if (isNaN(num)) return 0;
+                    if (num > 32767) return 32767;
+                    if (num < -32768) return -32768;
+                    return num;
+                }
+
+                function safeString(val: any): string {
+                    if (typeof val === 'object' && val !== null) return JSON.stringify(val);
+                    if (val === undefined || val === null) return '';
+                    return String(val); // Postgres handles TEXT fine, but for VARCHAR(N) validation is implicit
+                }
+
+                for (const k of keys) {
                     dbColumns.push(`"${k}"`);
                     let val = schoolObj[k];
-                    if (typeof val === 'object' && val !== null) {
+                    const type = columnTypes.get(k) || 'text';
+
+                    // Unified Type-Based Sanitization
+                    if (k === 'latitude') {
+                        let f = parseFloat(val);
+                        if (isNaN(f)) f = 0;
+                        if (f > 90) f = 90;
+                        if (f < -90) f = -90;
+                        val = f;
+                    } else if (k === 'longitude') {
+                        let f = parseFloat(val);
+                        if (isNaN(f)) f = 0;
+                        if (f > 180) f = 180;
+                        if (f < -180) f = -180;
+                        val = f;
+                    } else if (type === 'integer') {
+                        val = safeInt(val);
+                    } else if (type === 'smallint') {
+                        val = safeSmallInt(val);
+                    } else if (type === 'bigint') {
+                        val = safeBigInt(val);
+                    } else if (type === 'numeric' || type === 'decimal' || type === 'double precision' || type === 'real') {
+                        const f = parseFloat(val);
+                        val = isNaN(f) ? 0 : f;
+                    } else if (typeof val === 'object' && val !== null && type !== 'jsonb' && type !== 'json') {
                         val = JSON.stringify(val);
+                    } else if (type === 'jsonb' || type === 'json') {
+                        if (typeof val === 'string') {
+                            try { JSON.parse(val); } catch (e) { val = '{}'; }
+                        } else if (typeof val !== 'object') {
+                            val = '{}';
+                        }
+                    } else {
+                        if (typeof val === 'object' && val !== null) val = JSON.stringify(val);
                     }
+
                     values.push(val);
                 }
 
@@ -220,8 +321,19 @@ async function seed() {
 
                 successCount++;
                 if (successCount % 100 === 0) process.stdout.write('.');
-            } catch (err) {
-                console.warn(`\n⚠️ Failed to insert ${s.schoolName}: ${err}`);
+            } catch (err: any) {
+                console.warn(`\n⚠️ Failed to insert ${s.schoolName}: ${err.message}`);
+                if (err.detail) console.warn(`   Detail: ${err.detail}`);
+                if (err.column) console.warn(`   Column: ${err.column}`);
+                if (err.dataType) console.warn(`   Type: ${err.dataType}`);
+                // Debug: print values causing overflow
+                if (err.message.includes('overflow')) {
+                    // find relevant numeric keys
+                    const relevant = Object.entries(s).filter(([k, v]) =>
+                        typeof v === 'number' && (v > 2147483647 || String(v).length > 9)
+                    );
+                    console.warn(`   Possible Culprits: ${JSON.stringify(relevant)}`);
+                }
             }
         }
 
