@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'backend/schools_chunk_*'
+      - 'backend/prod_seed.sql.gz'
       - '.github/workflows/seed_prod.yml'
 
 jobs:
@@ -14,42 +14,34 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Copy Chunks to Server
+      - name: Copy SQL Dump to Server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.PROD_HOST }}
           username: root
           key: ${{ secrets.PROD_SSH_KEY }}
-          source: "backend/schools_chunk_*"
+          source: "backend/prod_seed.sql.gz"
           target: "/root/getschoolinfo/backend/"
           strip_components: 1
 
-      - name: Reassemble & Seed
+      - name: Restore Database from Dump
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.PROD_HOST }}
           username: root
           key: ${{ secrets.PROD_SSH_KEY }}
-          command_timeout: 45m # Increase timeout to 45 minutes
           script: |
-             set -e # Fail fast
+             set -e
              cd /root/getschoolinfo/backend
              
-             echo "📂 Debug: Listing files..."
-             ls -la schools_chunk_* || echo "⚠️  Chunks missing in $(pwd)"
+             echo "📦 Found Dump File:"
+             ls -lh prod_seed.sql.gz
              
-             echo "📦 Reassembling 270MB file from chunks..."
-             cat schools_chunk_* > schools_temp.json
-             rm schools_chunk_*
-             
-             echo "🌱 Moving to container..."
-             docker cp schools_temp.json school-portal-backend-prod:/app/schools_temp.json
-             rm schools_temp.json
-             
-             echo "🚀 Running Seeder (Max Memory: 4GB)..."
-             # Use --max-old-space-size to prevent OOM on large JSON
-             docker exec school-portal-backend-prod node --max-old-space-size=4096 dist/seed.js schools_temp.json
+             echo "🌱 Restoring via Psql (Direct DB streaming)..."
+             # Unzip stream -> Pipe to DB Container -> psql
+             # Using -U infinitylearn and -d school_db_dev based on .env defaults
+             zcat prod_seed.sql.gz | docker exec -i school-portal-db-prod psql -U infinitylearn -d school_db_dev
              
              echo "🧹 Cleanup..."
-             docker exec school-portal-backend-prod rm schools_temp.json
-             echo "✅ DONE."
+             rm prod_seed.sql.gz
+             echo "✅ DONE. Database Restored."
