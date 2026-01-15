@@ -29,8 +29,8 @@ export function middleware(request: NextRequest) {
 
     // --- Check 1: Bot Blocking & Sitemap Protection ---
 
-    // Feature: Restrict /sitemap.xml to Search Engines only (Anti-Scraping protection requested by user)
-    if (request.nextUrl.pathname === '/sitemap.xml') {
+    // Feature: Restrict /sitemap.xml and /sitemaps/* to Search Engines only
+    if (request.nextUrl.pathname === '/sitemap.xml' || request.nextUrl.pathname.startsWith('/sitemaps/')) {
         const allowedBots = ['googlebot', 'bingbot', 'slurp', 'duckduckbot', 'baiduspider', 'yandexbot', 'sogou', 'gptbot'];
         // Allow bots OR standard browsers (Mozilla is present in almost all browser UAs)
         // This blocks scripts like python-requests, curl, etc. unless they spoof headers.

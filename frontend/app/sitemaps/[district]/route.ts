@@ -11,12 +11,11 @@ export async function GET(
     const { district } = await params;
     const districtSlug = district; // e.g., 'agar-malwa'
 
-    const searchParams = request.nextUrl.searchParams;
-    // SECURITY: Only allow access with a secret token for now
-    const token = searchParams.get('token');
-    if (token !== 'preview') {
-        return new Response('Not Found', { status: 404 });
-    }
+    // SECURITY: Handled by middleware (bots allowed, scrapers blocked)
+    // const token = searchParams.get('token');
+    // if (token !== 'preview') {
+    //    return new Response('Not Found', { status: 404 });
+    // }
 
     const baseUrl = 'https://getschoolsinfo.com';
     const apiUrl = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
