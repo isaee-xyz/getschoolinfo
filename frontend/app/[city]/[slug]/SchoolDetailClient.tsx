@@ -176,6 +176,17 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
 
     const bbox = `${school.lng - 0.01},${school.lat - 0.01},${school.lng + 0.01},${school.lat + 0.01}`;
 
+    // Helper to clean strings
+    const decodeHtml = (str: string) => {
+        if (!str) return "";
+        return str.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+    };
+
+    const cleanName = decodeHtml(school.name);
+    const cleanAddress = decodeHtml(school.address);
+    // Fix Co-ed badge (remove leading number if present, e.g. "3-Co-educational")
+    const cleanType = school.schTypeDesc ? school.schTypeDesc.replace(/^[0-9]+-/, '') : '';
+
     return (
         <>
             <Header />
@@ -193,7 +204,7 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
                                 onClick={() => router.push(`/search?district=${school.district}`)}
                                 className="cursor-pointer hover:underline"
                             >{school.district}</span> /
-                            <span className="text-slate-600 font-semibold">{school.name}</span>
+                            <span className="text-slate-600 font-semibold truncate max-w-[200px]">{cleanName}</span>
                         </div>
 
                         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
@@ -206,20 +217,28 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
                                         onError={(e) => { (e.target as HTMLImageElement).src = '/default-school.jpg'; }}
                                     />
                                     <div>
-                                        <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 leading-tight mb-2">{school.name}</h1>
+                                        <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 leading-tight mb-2 break-words max-w-2xl">{cleanName}</h1>
                                         <div className="flex flex-wrap items-center gap-2 text-sm">
-                                            <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded text-xs font-bold">{school.boardSecName}</span>
-                                            <span className="px-2 py-0.5 bg-gray-100 text-gray-700 border border-gray-200 rounded text-xs font-bold">{school.schTypeDesc}</span>
-                                            <span className="px-2 py-0.5 bg-gray-100 text-gray-700 border border-gray-200 rounded text-xs font-bold">Est. {school.estdYear}</span>
-                                            <span className="px-2 py-0.5 bg-green-50 text-green-700 border border-green-100 rounded text-xs font-bold">{school.schoolStatusName}</span>
+                                            {school.boardSecName && school.boardSecName !== 'NA' && (
+                                                <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded text-xs font-bold">{school.boardSecName}</span>
+                                            )}
+                                            {cleanType && cleanType !== 'NA' && (
+                                                <span className="px-2 py-0.5 bg-gray-100 text-gray-700 border border-gray-200 rounded text-xs font-bold">{cleanType}</span>
+                                            )}
+                                            {school.estdYear > 0 && (
+                                                <span className="px-2 py-0.5 bg-gray-100 text-gray-700 border border-gray-200 rounded text-xs font-bold">Est. {school.estdYear}</span>
+                                            )}
+                                            {school.schoolStatusName && (
+                                                <span className="px-2 py-0.5 bg-green-50 text-green-700 border border-green-100 rounded text-xs font-bold">{school.schoolStatusName}</span>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="flex flex-wrap items-center gap-6 text-slate-600 mb-4 text-sm">
-                                    <span className="flex items-center gap-1.5">
-                                        <MapPin className="w-4 h-4 text-gray-400" />
-                                        {school.address}
+                                    <span className="flex items-center gap-1.5 break-all">
+                                        <MapPin className="w-4 h-4 text-gray-400 shrink-0" />
+                                        {cleanAddress}
                                     </span>
                                 </div>
                             </div>
@@ -268,29 +287,42 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
                             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                                 <h2 className="text-xl font-bold text-slate-900 mb-4">About School</h2>
                                 <p className="text-slate-600 leading-relaxed text-sm">
-                                    {school.name} is a {school.schTypeDesc} school affiliated with {school.boardSecName}.
-                                    Established in {school.estdYear}, it is managed by {school.schMgmtDesc || "Private Management"}.
-                                    The school is located in {school.block}, {school.district} and provides education from
-                                    Class {school.lowClass} to Class {school.highClass} with {school.mediumOfInstrName1} as the primary medium of instruction.
+                                    {cleanName} is a {cleanType || 'school'}
+                                    {school.boardSecName && school.boardSecName !== 'NA' ? ` affiliated with ${school.boardSecName}` : ''}.
+                                    {school.estdYear > 0 ? ` Established in ${school.estdYear}, it` : ' It'} is managed by {school.schMgmtDesc || "Private Management"}.
+                                    The school is located in {school.block}, {school.district}
+                                    {school.lowClass && school.highClass ? ` and provides education from Class ${school.lowClass} to Class ${school.highClass}` : ''}
+                                    {school.mediumOfInstrName1 ? ` with ${school.mediumOfInstrName1} as the primary medium of instruction` : ''}.
                                 </p>
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-gray-100">
-                                    <div className="text-center">
-                                        <span className="block text-2xl font-bold text-slate-800">{school.rowTotal}</span>
-                                        <span className="text-xs text-gray-500 uppercase tracking-wide">Students</span>
+
+                                {(school.rowTotal > 0 || school.totalTeacher > 0 || school.clsrmsGd > 0 || school.estdYear > 0) && (
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-gray-100">
+                                        {school.rowTotal > 0 && (
+                                            <div className="text-center">
+                                                <span className="block text-2xl font-bold text-slate-800">{school.rowTotal}</span>
+                                                <span className="text-xs text-gray-500 uppercase tracking-wide">Students</span>
+                                            </div>
+                                        )}
+                                        {school.totalTeacher > 0 && (
+                                            <div className="text-center">
+                                                <span className="block text-2xl font-bold text-slate-800">{school.totalTeacher}</span>
+                                                <span className="text-xs text-gray-500 uppercase tracking-wide">Teachers</span>
+                                            </div>
+                                        )}
+                                        {school.clsrmsGd > 0 && (
+                                            <div className="text-center">
+                                                <span className="block text-2xl font-bold text-slate-800">{school.clsrmsGd}</span>
+                                                <span className="text-xs text-gray-500 uppercase tracking-wide">Rooms</span>
+                                            </div>
+                                        )}
+                                        {school.estdYear > 0 && (
+                                            <div className="text-center">
+                                                <span className="block text-2xl font-bold text-slate-800">{school.estdYear}</span>
+                                                <span className="text-xs text-gray-500 uppercase tracking-wide">Since</span>
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className="text-center">
-                                        <span className="block text-2xl font-bold text-slate-800">{school.totalTeacher}</span>
-                                        <span className="text-xs text-gray-500 uppercase tracking-wide">Teachers</span>
-                                    </div>
-                                    <div className="text-center">
-                                        <span className="block text-2xl font-bold text-slate-800">{school.clsrmsGd}</span>
-                                        <span className="text-xs text-gray-500 uppercase tracking-wide">Rooms</span>
-                                    </div>
-                                    <div className="text-center">
-                                        <span className="block text-2xl font-bold text-slate-800">{school.estdYear}</span>
-                                        <span className="text-xs text-gray-500 uppercase tracking-wide">Since</span>
-                                    </div>
-                                </div>
+                                )}
                             </div>
 
                             {/* Health Audit Dashboard */}
