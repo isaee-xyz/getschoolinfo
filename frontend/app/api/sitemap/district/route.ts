@@ -59,10 +59,17 @@ export async function GET(request: NextRequest) {
                 // Let's try to map slug -> spaces. 'south-delhi' -> 'south delhi'.
 
                 const searchParam = districtSlug.replace(/-/g, ' ');
+                console.log(`DEBUG Sitemap: generate for slug=${districtSlug}, search=${searchParam}`);
 
                 // Re-fetch with approximated name
-                const schoolsRes = await fetch(`${apiUrl}/schools?district=${searchParam}&limit=5000`, { next: { revalidate: 3600 } });
+                const schoolsUrl = `${apiUrl}/schools?district=${searchParam}&limit=5000`;
+                console.log(`DEBUG Sitemap: fetching ${schoolsUrl}`);
+
+                const schoolsRes = await fetch(schoolsUrl, { next: { revalidate: 3600 } });
+                console.log(`DEBUG Sitemap: status=${schoolsRes.status}`);
+
                 const districtSchools: School[] = schoolsRes.ok ? await schoolsRes.json() : [];
+                console.log(`DEBUG Sitemap: found ${districtSchools.length} schools`);
 
                 districtSchools.forEach(school => {
                     const citySlug = school.district.toLowerCase().replace(/\s+/g, '-');
