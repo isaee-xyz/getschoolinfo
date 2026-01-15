@@ -32,15 +32,25 @@ jobs:
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
              set -e
-             cd /root/getschoolinfo/backend
+             cd /root/getschoolinfo
+             
+             # Load Environment Variables from the deployed .env file
+             if [ -f .env ]; then
+                export $(grep -v '^#' .env | xargs)
+                echo "✅ Loaded Environment Variables (DB_USER=$DB_USER, DB_NAME=$DB_NAME)"
+             else
+                echo "❌ Error: .env file not found in /root/getschoolinfo"
+                exit 1
+             fi
+
+             cd backend
              
              echo "📦 Found Dump File:"
              ls -lh prod_seed.sql.gz
              
              echo "🌱 Restoring via Psql (Direct DB streaming)..."
-             # Unzip stream -> Pipe to DB Container -> psql
-             # Using -U infinitylearn and -d school_db_dev based on .env defaults
-             zcat prod_seed.sql.gz | docker exec -i school-portal-db-prod psql -U infinitylearn -d school_db_dev
+             # Use dynamic variables loaded from .env
+             zcat prod_seed.sql.gz | docker exec -i school-portal-db-prod psql -U "$DB_USER" -d "$DB_NAME"
              
              echo "🧹 Cleanup..."
              rm prod_seed.sql.gz
