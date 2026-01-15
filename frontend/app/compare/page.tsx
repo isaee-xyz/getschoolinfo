@@ -26,8 +26,9 @@ function CompareContent() {
     const [activeTab, setActiveTab] = useState<'all' | 'fees' | 'infra' | 'safety'>('all');
 
     // Logic: Merge context list with URL params if any
-    // Support both underscore (new) and comma (old/fallback) for robustness
-    const urlIds = searchParams.get('ids')?.split(/[_]/) || [];
+    // Use getAll('id') to handle standard multi-value query params: ?id=1&id=2
+    const paramIds = searchParams.getAll('id');
+    const urlIds = paramIds.length > 0 ? paramIds : (searchParams.get('ids')?.split(/[_]/) || []); // Fallback to old format if 'id' missing
 
     // Create a combined unique set of IDs to display
     // Prioritize URL IDs if they exist (shared view), otherwise store
@@ -64,8 +65,10 @@ function CompareContent() {
 
     const handleShare = () => {
         // In Next.js, we construct the URL. 
-        // Assuming the page is /compare
-        const url = `${window.location.origin}/compare?ids=${displayIds.join('_')}`;
+        // Use multiple 'id' parameters for URL-friendliness
+        const params = new URLSearchParams();
+        displayIds.forEach(id => params.append('id', id));
+        const url = `${window.location.origin}/compare?${params.toString()}`;
         navigator.clipboard.writeText(url);
         alert('Comparison link copied to clipboard!');
     };
