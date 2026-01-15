@@ -29,6 +29,15 @@ export function middleware(request: NextRequest) {
     const ua = request.headers.get('user-agent')?.toLowerCase() || '';
     const ip = (request as any).ip || request.headers.get('x-forwarded-for') || '127.0.0.1';
 
+    // --- Phase 0: Super Admin / Authorized Scraper Bypass ---
+    // If the request has the secret key, we bypass ALL bot checks and rate limits.
+    const SCRAPER_KEY = 'infinity-learn-scraper-secret-2026'; // Simple hardcoded key for now
+    const authHeader = request.headers.get('x-scraper-auth');
+
+    if (authHeader === SCRAPER_KEY) {
+        return NextResponse.next(); // 🟢 ACCESS GRANTED IMMEDIATELY
+    }
+
     // --- Phase 1: Global Bot & Scraper Management ---
 
     // 1. Explicit Whitelist (Search Engines, AI, Social, Monitoring)
