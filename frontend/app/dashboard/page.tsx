@@ -105,7 +105,7 @@ export default function DashboardPage() {
                             </div>
 
                             {/* Compare Stat (Clickable) */}
-                            <Link href={compareList.length > 0 ? `/compare?${compareList.map(id => `id=${id}`).join('&')}` : '/compare'} className="block group">
+                            <Link href={compareList.length > 0 ? `/compare?${compareList.map((id, i) => `id_${i + 1}=${id}`).join('&')}` : '/compare'} className="block group">
                                 <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/10 flex items-center gap-4 transition-transform group-hover:scale-105 group-hover:bg-white/20">
                                     <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center text-white">
                                         <TrendingUp className="w-6 h-6" />

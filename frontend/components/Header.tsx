@@ -38,7 +38,7 @@ const Header: React.FC = () => {
         <div className="flex items-center gap-3 md:gap-4">
 
           <Link
-            href={compareList.length > 0 ? `/compare?${compareList.map(id => `id=${id}`).join('&')}` : '/compare'}
+            href={compareList.length > 0 ? `/compare?${compareList.map((id, i) => `id_${i + 1}=${id}`).join('&')}` : '/compare'}
             className="relative p-2 text-slate-600 hover:text-blue-600 transition-colors"
             title="Compare Schools"
           >

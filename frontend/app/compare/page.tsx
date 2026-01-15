@@ -26,9 +26,13 @@ function CompareContent() {
     const [activeTab, setActiveTab] = useState<'all' | 'fees' | 'infra' | 'safety'>('all');
 
     // Logic: Merge context list with URL params if any
-    // Use getAll('id') to handle standard multi-value query params: ?id=1&id=2
-    const paramIds = searchParams.getAll('id');
-    const urlIds = paramIds.length > 0 ? paramIds : (searchParams.get('ids')?.split(/[_]/) || []); // Fallback to old format if 'id' missing
+    // Support indexed params (id_1, id_2, id_3) per user request
+    const indexedIds = [];
+    if (searchParams.get('id_1')) indexedIds.push(searchParams.get('id_1')!);
+    if (searchParams.get('id_2')) indexedIds.push(searchParams.get('id_2')!);
+    if (searchParams.get('id_3')) indexedIds.push(searchParams.get('id_3')!);
+
+    const urlIds = indexedIds.length > 0 ? indexedIds : (searchParams.get('ids')?.split(/[_]/) || []);
 
     // Create a combined unique set of IDs to display
     // Prioritize URL IDs if they exist (shared view), otherwise store
@@ -65,9 +69,9 @@ function CompareContent() {
 
     const handleShare = () => {
         // In Next.js, we construct the URL. 
-        // Use multiple 'id' parameters for URL-friendliness
+        // Use indexed parameters: id_1, id_2, id_3
         const params = new URLSearchParams();
-        displayIds.forEach(id => params.append('id', id));
+        displayIds.forEach((id, index) => params.append(`id_${index + 1}`, id));
         const url = `${window.location.origin}/compare?${params.toString()}`;
         navigator.clipboard.writeText(url);
         alert('Comparison link copied to clipboard!');
