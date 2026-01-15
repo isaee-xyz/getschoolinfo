@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+// Security Update: Force Deploy v2
+
 // 1. Scraper User-Agent Blocklist
 // We block strictly known automated tools that don't respect UX or potential DOS vectors
 const BAD_BOT_AGENTS = [
