@@ -224,11 +224,11 @@ app.get('/api/schools', async (req, res) => {
 
     if (district) {
       values.push(district);
-      conditions.push(`district = $${values.length}`);
+      conditions.push(`district ILIKE $${values.length}`);
     }
     if (state) {
       values.push(state);
-      conditions.push(`state = $${values.length}`);
+      conditions.push(`state ILIKE $${values.length}`);
     }
     if (search) {
       values.push(`%${search}%`);
