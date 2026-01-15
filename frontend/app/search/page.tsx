@@ -43,7 +43,14 @@ function SearchContent() {
 
                 const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/schools?${params.toString()}`);
                 if (!res.ok) throw new Error('Failed to fetch');
-                const data = await res.json();
+                const rawData = await res.json();
+
+                // Map raw data to ensure 'id' property exists for SchoolCard
+                const data = Array.isArray(rawData) ? rawData.map((s: any) => ({
+                    ...s,
+                    id: String(s.id || s._id || s.udise_code || Math.random()) // Fallback to unique ID
+                })) : [];
+
                 setSchools(data);
             } catch (err) {
                 console.error("Error fetching schools:", err);

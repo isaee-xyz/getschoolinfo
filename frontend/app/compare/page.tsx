@@ -40,8 +40,16 @@ function CompareContent() {
                 // Fetch all schools and filter (Optimization: Implement /api/schools?ids=... in future)
                 const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/schools`);
                 if (!res.ok) throw new Error("Failed to fetch");
-                const allSchools: School[] = await res.json();
-                setSchools(allSchools.filter(s => displayIds.includes(s.id?.toString()))); // Ensure ID match
+
+                const rawData = await res.json();
+
+                // Map raw data to ensure 'id' property exists (matching Search Page logic)
+                const allSchools: School[] = Array.isArray(rawData) ? rawData.map((s: any) => ({
+                    ...s,
+                    id: String(s.id || s._id || s.udise_code || Math.random())
+                })) : [];
+
+                setSchools(allSchools.filter(s => displayIds.includes(String(s.id))));
             } catch (err) {
                 console.error("Error fetching compare schools:", err);
             }
