@@ -54,4 +54,14 @@ jobs:
              
              echo "🧹 Cleanup..."
              rm prod_seed.sql.gz
-             echo "✅ DONE. Database Restored."
+             
+             echo "🔍 VERIFICATION: Checking Row Count..."
+             COUNT=$(docker exec -i school-portal-db-prod psql -U "$DB_USER" -d "$DB_NAME" -t -c "SELECT count(*) FROM schools;")
+             echo "📊 Schools Count: $COUNT"
+             
+             if [ $(echo "$COUNT" | xargs) -lt 100 ]; then
+                echo "❌ Error: Schools table seems empty ($COUNT rows) after restore!"
+                exit 1
+             fi
+             
+             echo "✅ DONE. Database Restored & Verified."
