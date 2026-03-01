@@ -23,7 +23,7 @@ export default function LoginModal({ isOpen, onClose, title = "Unlock School Det
         setIsLoading(true);
         try {
             await loginWithGoogle();
-            onClose(); // Close modal on success
+            onClose();
         } catch (error: any) {
             console.error("Login failed", error);
             const msg = error?.message || "Login failed. Please check your connection or try again.";
@@ -40,22 +40,25 @@ export default function LoginModal({ isOpen, onClose, title = "Unlock School Det
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}></div>
 
             {/* Modal */}
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="relative rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200" style={{ background: 'var(--gsi-surface)' }}>
                 {/* Close Button */}
-                <button onClick={onClose} className="absolute top-3 right-3 p-2 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition-colors">
+                <button onClick={onClose} className="absolute top-3 right-3 p-2 rounded-full transition-colors" style={{ color: 'var(--gsi-text-muted)' }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'var(--gsi-bg-warm)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = ''}
+                >
                     <X className="w-5 h-5" />
                 </button>
 
                 <div className="p-8">
                     <div className="flex justify-center mb-6">
-                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 shadow-inner">
+                        <div className="w-16 h-16 rounded-full flex items-center justify-center shadow-inner" style={{ background: 'var(--gsi-primary-50)', color: 'var(--gsi-primary)' }}>
                             <Lock className="w-8 h-8" />
                         </div>
                     </div>
 
                     <div className="text-center mb-8">
-                        <h3 className="text-xl font-bold text-slate-900 mb-2">{title}</h3>
-                        <p className="text-sm text-slate-500">{subTitle}</p>
+                        <h3 className="text-xl font-bold mb-2 font-display" style={{ color: 'var(--gsi-text)' }}>{title}</h3>
+                        <p className="text-sm" style={{ color: 'var(--gsi-text-muted)' }}>{subTitle}</p>
                     </div>
 
                     {/* Checkboxes */}
@@ -65,10 +68,11 @@ export default function LoginModal({ isOpen, onClose, title = "Unlock School Det
                                 type="checkbox"
                                 checked={privacyChecked}
                                 onChange={(e) => setPrivacyChecked(e.target.checked)}
-                                className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                className="mt-1 w-4 h-4 rounded accent-teal-600 focus:ring-teal-500"
+                                style={{ borderColor: 'var(--gsi-border)' }}
                             />
-                            <span className="text-xs text-slate-600 leading-tight">
-                                I agree to the <a href="/terms-and-condition" className="text-blue-600 hover:underline" target="_blank">Terms</a> and <a href="/privacy-policy" className="text-blue-600 hover:underline" target="_blank">Privacy Policy</a>. <span className="text-red-500">*</span>
+                            <span className="text-xs leading-tight" style={{ color: 'var(--gsi-text-secondary)' }}>
+                                I agree to the <a href="/terms-and-condition" className="font-medium hover:underline" style={{ color: 'var(--gsi-primary)' }} target="_blank">Terms</a> and <a href="/privacy-policy" className="font-medium hover:underline" style={{ color: 'var(--gsi-primary)' }} target="_blank">Privacy Policy</a>. <span className="text-red-500">*</span>
                             </span>
                         </label>
 
@@ -77,9 +81,10 @@ export default function LoginModal({ isOpen, onClose, title = "Unlock School Det
                                 type="checkbox"
                                 checked={marketingChecked}
                                 onChange={(e) => setMarketingChecked(e.target.checked)}
-                                className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                className="mt-1 w-4 h-4 rounded accent-teal-600 focus:ring-teal-500"
+                                style={{ borderColor: 'var(--gsi-border)' }}
                             />
-                            <span className="text-[10px] text-slate-500 leading-tight group-hover:text-slate-700 transition-colors">
+                            <span className="text-[10px] leading-tight transition-colors" style={{ color: 'var(--gsi-text-muted)' }}>
                                 Receive admission updates via WhatsApp/SMS/Call. (Optional)
                             </span>
                         </label>
@@ -88,7 +93,10 @@ export default function LoginModal({ isOpen, onClose, title = "Unlock School Det
                     <button
                         onClick={handleGoogleLogin}
                         disabled={isLoading || !privacyChecked}
-                        className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-900/10"
+                        className="w-full text-white font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                        style={{ background: 'var(--gsi-primary)' }}
+                        onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = 'var(--gsi-primary-dark)'; }}
+                        onMouseLeave={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = 'var(--gsi-primary)'; }}
                     >
                         {isLoading ? (
                             <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>

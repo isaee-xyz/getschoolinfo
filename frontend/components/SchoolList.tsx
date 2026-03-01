@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import FilterSidebar from '@/components/FilterSidebar';
 import SchoolCard from '@/components/SchoolCard';
 import { MOCK_SCHOOLS } from '@/constants';
 import { FilterState } from '@/types';
-import { SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal, SearchX, RotateCcw, Loader2 } from 'lucide-react';
 
 interface SchoolListProps {
     initialFilters?: Partial<FilterState>;
@@ -17,6 +17,8 @@ interface SchoolListProps {
 export default function SchoolList({ initialFilters, title, subtitle, schools = MOCK_SCHOOLS }: SchoolListProps) {
     const [showMobileFilters, setShowMobileFilters] = useState(false);
     const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const sentinelRef = useRef<HTMLDivElement>(null);
 
     const [filters, setFilters] = useState<FilterState>({
         location: initialFilters?.location || '',
@@ -34,12 +36,24 @@ export default function SchoolList({ initialFilters, title, subtitle, schools = 
         genderBalanced: initialFilters?.genderBalanced || false
     });
 
-    // Sync district from props if URL changes
+    // Sync district and state from props if URL changes
     React.useEffect(() => {
-        if (initialFilters?.district) {
-            setFilters(prev => ({ ...prev, district: initialFilters.district! }));
+        const updates: Partial<FilterState> = {};
+        if (initialFilters?.district && initialFilters.district !== filters.district) {
+            updates.district = initialFilters.district;
         }
-    }, [initialFilters?.district]);
+        if (initialFilters?.state && initialFilters.state !== filters.state) {
+            updates.state = initialFilters.state;
+        }
+        if (Object.keys(updates).length > 0) {
+            setFilters(prev => ({ ...prev, ...updates }));
+        }
+    }, [initialFilters?.district, initialFilters?.state]);
+
+    // Reset visible count when filters change
+    useEffect(() => {
+        setVisibleCount(10);
+    }, [filters]);
 
     const filteredSchools = useMemo(() => {
         return schools.filter(school => {
@@ -54,7 +68,6 @@ export default function SchoolList({ initialFilters, title, subtitle, schools = 
             }
 
             // Explicit District Filter (Dropdown)
-            // If user selected a district in sidebar, match it exactly.
             if (filters.district) {
                 if (school.district.toLowerCase() !== filters.district.toLowerCase()) return false;
             }
@@ -69,10 +82,7 @@ export default function SchoolList({ initialFilters, title, subtitle, schools = 
 
             // Board (if array is not empty)
             if (filters.board.length > 0) {
-                // Mock data needs board normalization, assuming simple string match for now
                 const schoolBoard = school.boardSecName;
-                // check if schoolBoard is included in selected boards
-                // (This needs robust data normalization in real app)
             }
 
             // Quality: Smart Classrooms
@@ -113,75 +123,177 @@ export default function SchoolList({ initialFilters, title, subtitle, schools = 
         });
     }, [filters, schools]);
 
+    // Infinite scroll with IntersectionObserver
+    const loadMore = useCallback(() => {
+        setIsLoadingMore(true);
+        // Small delay to show loading indicator and avoid jarring jumps
+        setTimeout(() => {
+            setVisibleCount(prev => prev + 10);
+            setIsLoadingMore(false);
+        }, 300);
+    }, []);
+
+    useEffect(() => {
+        const sentinel = sentinelRef.current;
+        if (!sentinel) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                const entry = entries[0];
+                if (entry.isIntersecting && visibleCount < filteredSchools.length && !isLoadingMore) {
+                    loadMore();
+                }
+            },
+            { rootMargin: '200px' }
+        );
+
+        observer.observe(sentinel);
+        return () => observer.disconnect();
+    }, [visibleCount, filteredSchools.length, isLoadingMore, loadMore]);
+
+    const clearAllFilters = () => {
+        setFilters({
+            location: '',
+            district: '',
+            state: '',
+            blocks: [],
+            maxFee: 200000,
+            board: [],
+            grade: '',
+            smartClass: false,
+            qualifiedStaff: false,
+            securePerimeter: false,
+            disabilityFriendly: false,
+            rteCompliant: false,
+            genderBalanced: false
+        });
+    };
+
     return (
         <div className="container mx-auto px-4 py-8">
             {/* Mobile Filter Toggle */}
             <div className="md:hidden mb-4">
                 <button
                     onClick={() => setShowMobileFilters(!showMobileFilters)}
-                    className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 p-3 rounded-lg font-semibold text-slate-700"
+                    className="w-full flex items-center justify-center gap-2 p-3.5 rounded-xl font-semibold text-sm transition-colors"
+                    style={{
+                        background: 'var(--gsi-surface)',
+                        border: '1px solid var(--gsi-border)',
+                        color: 'var(--gsi-text-secondary)',
+                    }}
                 >
-                    <SlidersHorizontal className="w-5 h-5" />
+                    <SlidersHorizontal className="w-4 h-4" style={{ color: showMobileFilters ? 'var(--gsi-primary)' : undefined }} />
                     {showMobileFilters ? 'Hide Filters' : 'Show Filters'}
                 </button>
             </div>
 
-            <div className="flex flex-col md:flex-row gap-8">
+            <div className="flex flex-col md:flex-row gap-6 lg:gap-8">
                 {/* Sidebar */}
-                <aside className={`md:w-1/4 ${showMobileFilters ? 'block' : 'hidden md:block'}`}>
+                <aside className={`md:w-72 lg:w-80 shrink-0 ${showMobileFilters ? 'block' : 'hidden md:block'}`}>
                     <FilterSidebar filters={filters} setFilters={setFilters} />
                 </aside>
 
                 {/* Results */}
-                <main className="md:w-3/4">
-                    <div className="mb-6">
-                        <h1 className="text-2xl font-bold text-slate-900">
-                            {title ? title : `Found ${filteredSchools.length} Schools`}
-                        </h1>
-                        <p className="text-slate-500 text-sm mt-1">
-                            {subtitle ? subtitle : "Showing schools verified by government data (2024-25) with Policy-Benchmarked Metrics."}
-                        </p>
+                <main className="flex-1 min-w-0">
+                    {/* Results Header */}
+                    <div className="mb-5">
+                        <div className="flex items-end justify-between gap-4 flex-wrap">
+                            <div>
+                                <h1 className="text-xl lg:text-2xl font-bold tracking-tight font-display" style={{ color: 'var(--gsi-text)' }}>
+                                    {title ? title : (
+                                        <>
+                                            <span style={{ color: 'var(--gsi-primary)' }}>{filteredSchools.length.toLocaleString()}</span>
+                                            {' '}Schools Found
+                                        </>
+                                    )}
+                                </h1>
+                                <p className="text-sm mt-1 leading-relaxed" style={{ color: 'var(--gsi-text-muted)' }}>
+                                    {subtitle ? subtitle : "Government-reported data from UDISE+ (2024-25)"}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Active filter chips */}
+                        {(filters.district || filters.state) && (
+                            <div className="flex flex-wrap items-center gap-2 mt-3">
+                                {filters.state && (
+                                    <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full" style={{ background: 'var(--gsi-surface)', border: '1px solid var(--gsi-border)', color: 'var(--gsi-text-secondary)' }}>
+                                        {filters.state}
+                                        <button
+                                            onClick={() => setFilters(prev => ({ ...prev, state: '', district: '', blocks: [] }))}
+                                            className="ml-0.5 transition-colors"
+                                        >
+                                            <RotateCcw className="w-3 h-3" />
+                                        </button>
+                                    </span>
+                                )}
+                                {filters.district && (
+                                    <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full text-white"
+                                        style={{ background: 'var(--gsi-primary)', borderColor: 'var(--gsi-primary)' }}>
+                                        {filters.district}
+                                        <button
+                                            onClick={() => setFilters(prev => ({ ...prev, district: '', blocks: [] }))}
+                                            className="ml-0.5 opacity-80 hover:opacity-100 transition-opacity"
+                                        >
+                                            <RotateCcw className="w-3 h-3" />
+                                        </button>
+                                    </span>
+                                )}
+                            </div>
+                        )}
                     </div>
 
+                    {/* School Cards */}
                     <div className="space-y-4">
                         {filteredSchools.length > 0 ? (
                             <>
-                                {filteredSchools.slice(0, visibleCount).map(school => (
+                                {filteredSchools.slice(0, visibleCount).map((school, index) => (
                                     <SchoolCard key={school.id} school={school} />
                                 ))}
 
+                                {/* Infinite scroll sentinel */}
                                 {visibleCount < filteredSchools.length && (
-                                    <div className="text-center mt-8">
-                                        <button
-                                            onClick={() => setVisibleCount(prev => prev + 10)}
-                                            className="bg-white border border-gray-300 text-slate-700 font-bold py-3 px-8 rounded-full shadow-sm hover:bg-gray-50 hover:shadow-md transition-all"
-                                        >
-                                            Load More Schools ({filteredSchools.length - visibleCount} remaining)
-                                        </button>
+                                    <div ref={sentinelRef} className="flex flex-col items-center justify-center py-8 gap-2">
+                                        {isLoadingMore ? (
+                                            <>
+                                                <Loader2 className="w-6 h-6 animate-spin" style={{ color: 'var(--gsi-primary)' }} />
+                                                <span className="text-xs font-medium" style={{ color: 'var(--gsi-text-muted)' }}>
+                                                    Loading more schools...
+                                                </span>
+                                            </>
+                                        ) : (
+                                            <span className="text-xs" style={{ color: 'var(--gsi-text-muted)' }}>
+                                                {filteredSchools.length - visibleCount} more schools below
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* All loaded indicator */}
+                                {visibleCount >= filteredSchools.length && filteredSchools.length > 10 && (
+                                    <div className="text-center py-6">
+                                        <span className="text-xs font-medium" style={{ color: 'var(--gsi-text-muted)' }}>
+                                            Showing all {filteredSchools.length} schools
+                                        </span>
                                     </div>
                                 )}
                             </>
                         ) : (
-                            <div className="text-center py-20 bg-white rounded-xl border border-gray-200">
-                                <p className="text-slate-500 text-lg">No schools match your specific criteria.</p>
+                            /* Empty State */
+                            <div className="text-center py-16 rounded-xl" style={{ background: 'var(--gsi-surface)', border: '1px solid var(--gsi-border)' }}>
+                                <SearchX className="w-10 h-10 mx-auto mb-4" style={{ color: 'var(--gsi-border)' }} />
+                                <h3 className="text-lg font-semibold mb-1 font-display" style={{ color: 'var(--gsi-text-secondary)' }}>No schools match your criteria</h3>
+                                <p className="text-sm mb-5 max-w-sm mx-auto" style={{ color: 'var(--gsi-text-muted)' }}>
+                                    Try broadening your filters or selecting a different location.
+                                </p>
                                 <button
-                                    onClick={() => setFilters({
-                                        location: '',
-                                        district: '',
-                                        state: '',
-                                        blocks: [],
-                                        maxFee: 200000,
-                                        board: [],
-                                        grade: '',
-                                        smartClass: false,
-                                        qualifiedStaff: false,
-                                        securePerimeter: false,
-                                        disabilityFriendly: false,
-                                        rteCompliant: false,
-                                        genderBalanced: false
-                                    })}
-                                    className="mt-4 text-blue-600 font-semibold hover:underline"
+                                    onClick={clearAllFilters}
+                                    className="inline-flex items-center gap-2 text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors"
+                                    style={{ color: 'var(--gsi-primary)' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = 'var(--gsi-primary-50)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = ''}
                                 >
+                                    <RotateCcw className="w-4 h-4" />
                                     Clear all filters
                                 </button>
                             </div>

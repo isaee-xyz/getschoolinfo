@@ -3,27 +3,34 @@ import { Metadata } from 'next';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SchoolList from '@/components/SchoolList';
-import { MOCK_SCHOOLS } from '@/constants';
 
-// --- Static Generation Configuration ---
+// --- Configuration ---
 
-// This ensures these paths are built at build time (or on demand if fallback is true)
-// reducing server load to ZERO for subsequent requests.
-/*
-export async function generateStaticParams() {
-    // In production, fetch this list from DB: SELECT distinct district FROM schools
-    const districts = Array.from(new Set(MOCK_SCHOOLS.map(s => s.district))).filter(Boolean);
-
-    // Normalize to URL-friendly slugs (e.g., "bathinda", "mumbai")
-    return districts.map((city) => ({
-        city: city.toLowerCase().replace(/\s+/g, '-')
-    }));
-}
-*/
 export const dynamic = 'force-dynamic';
-
-// ISR Revalidation: Update these pages at most once per day
 export const revalidate = 0;
+
+// --- Helper: Fetch schools by district from the API ---
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+
+async function fetchSchoolsByDistrict(district: string) {
+    try {
+        const res = await fetch(`${API_BASE}/schools?district=${encodeURIComponent(district)}&limit=500`, {
+            next: { revalidate: 3600 }, // Cache for 1 hour on server
+        });
+        if (!res.ok) return [];
+        const data = await res.json();
+        return Array.isArray(data)
+            ? data.map((s: any) => ({
+                ...s,
+                id: String(s.udise_code || s.id || ''),
+            }))
+            : [];
+    } catch (err) {
+        console.error('Failed to fetch schools for district:', district, err);
+        return [];
+    }
+}
 
 // --- Metadata ---
 
@@ -36,7 +43,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const formattedCity = city.charAt(0).toUpperCase() + city.slice(1).replace(/-/g, ' ');
 
     return {
-        title: `Top Schools in ${formattedCity} | Fees, Reviews & Admissions 2024`,
+        title: `Top Schools in ${formattedCity} | Fees, Reviews & Admissions 2025`,
         description: `Find the best schools in ${formattedCity}. Compare fees, board affiliation (CBSE/ICSE), infrastructure, and academic results for top-rated schools in ${formattedCity}.`,
         alternates: {
             canonical: `https://getschoolinfo.com/city/${city}`,
@@ -48,15 +55,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CityPage({ params }: Props) {
     const { city } = await params;
-    const normalizedCitySearch = city.replace(/-/g, ' ').toLowerCase();
+    const districtSearch = city.replace(/-/g, ' ');
 
-    // In a real app with DB, we'd fetch specific schools here 
-    // const schools = await db.query('SELECT * FROM schools WHERE lower(district) = $1', [normalizedCitySearch]);
-
-    // For now, filtering mock data:
-    const citySchools = MOCK_SCHOOLS.filter(s =>
-        s.district.toLowerCase().includes(normalizedCitySearch)
-    );
+    const citySchools = await fetchSchoolsByDistrict(districtSearch);
 
     const formattedCity = city.charAt(0).toUpperCase() + city.slice(1).replace(/-/g, ' ');
     const count = citySchools.length;
@@ -67,10 +68,10 @@ export default async function CityPage({ params }: Props) {
         "@type": "SearchResultsPage",
         "mainEntity": {
             "@type": "ItemList",
-            "itemListElement": citySchools.slice(0, 10).map((school, index) => ({
+            "itemListElement": citySchools.slice(0, 10).map((school: any, index: number) => ({
                 "@type": "ListItem",
                 "position": index + 1,
-                "url": `https://getschoolinfo.com/school/${school.id}`,
+                "url": `https://getschoolinfo.com/${(school.district || city).toLowerCase().replace(/\s+/g, '-')}/${school.slug || school.udise_code || school.id}`,
                 "name": school.name
             }))
         }
@@ -83,12 +84,14 @@ export default async function CityPage({ params }: Props) {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
             <Header />
-            <main className="min-h-screen bg-gray-50">
+            <main className="min-h-screen" style={{ background: 'var(--gsi-bg)' }}>
                 <SchoolList
                     schools={citySchools}
                     initialFilters={{ location: formattedCity }}
                     title={`Best Schools in ${formattedCity}`}
-                    subtitle={`Explore ${count} top-rated schools in ${formattedCity}. Filter by fees, board, and facilities.`}
+                    subtitle={count > 0
+                        ? `Explore ${count} schools in ${formattedCity}. Powered by official UDISE+ data (2024-25).`
+                        : `No schools found in ${formattedCity}. Try searching with a different spelling.`}
                 />
             </main>
             <Footer />

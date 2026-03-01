@@ -1,200 +1,351 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { School } from '../types';
-import { MapPin, CheckCircle, Scale } from 'lucide-react';
+import { MapPin, Scale, ChevronRight, Share2, ShieldCheck, Info } from 'lucide-react';
 import Link from 'next/link';
 import { useStore } from '../context/StoreContext';
-import InfoTooltip from './InfoTooltip';
 
 interface SchoolCardProps {
   school: School;
 }
 
+/* ── Score helper: calculate overall school score out of 10 ── */
+const calcOverallScore = (metrics: { str: number; strStatus: string; bedPct: number; density: number; densityStatus: string; hygieneStatus: string; hasDigital: boolean }) => {
+  let score = 0;
+  let factors = 0;
+
+  // STR score (0-2.5)
+  if (metrics.str > 0) {
+    if (metrics.str <= 25) score += 2.5;
+    else if (metrics.str <= 30) score += 2;
+    else if (metrics.str <= 40) score += 1.2;
+    else score += 0.5;
+    factors++;
+  }
+
+  // Qualification score (0-2.5)
+  if (metrics.bedPct > 0) {
+    score += (metrics.bedPct / 100) * 2.5;
+    factors++;
+  }
+
+  // Density score (0-2)
+  if (metrics.density > 0) {
+    if (metrics.density <= 30) score += 2;
+    else if (metrics.density <= 40) score += 1.5;
+    else if (metrics.density <= 50) score += 0.8;
+    else score += 0.3;
+    factors++;
+  }
+
+  // Hygiene score (0-1.5)
+  if (metrics.hygieneStatus === 'good') score += 1.5;
+  else if (metrics.hygieneStatus === 'avg') score += 0.9;
+  else score += 0.3;
+  factors++;
+
+  // Digital score (0-1.5)
+  if (metrics.hasDigital) score += 1.5;
+  else score += 0;
+  factors++;
+
+  // Normalize if not all factors present
+  if (factors < 5 && factors > 0) {
+    score = (score / factors) * 5 * 2; // scale to 10
+  }
+
+  return Math.min(10, Math.max(0, Math.round(score * 10) / 10));
+};
+
+const getGradeLabel = (score: number): { label: string; colorClass: string; bgClass: string } => {
+  if (score >= 8) return { label: 'Excellent', colorClass: 'score-excellent', bgClass: 'score-bg-excellent' };
+  if (score >= 6) return { label: 'Good', colorClass: 'score-good', bgClass: 'score-bg-good' };
+  if (score >= 4) return { label: 'Fair', colorClass: 'score-fair', bgClass: 'score-bg-fair' };
+  return { label: 'Needs Work', colorClass: 'score-poor', bgClass: 'score-bg-poor' };
+};
+
+const getMetricColor = (status: 'good' | 'avg' | 'poor') => {
+  if (status === 'good') return 'var(--gsi-success)';
+  if (status === 'avg') return 'var(--gsi-warning)';
+  return 'var(--gsi-danger)';
+};
+
 const SchoolCard: React.FC<SchoolCardProps> = ({ school }) => {
-  const { toggleCompare, isInCompare, isInShortlist } = useStore();
-  const isComparing = isInCompare(school.id);
-  const isSaved = isInShortlist(school.id);
+  const { toggleCompare, isInCompare } = useStore();
+  const [showScoreInfo, setShowScoreInfo] = useState(false);
+  const scoreInfoRef = useRef<HTMLDivElement>(null);
 
-  // --- Derivative Metric Calculations ---
-  // The API (school_stats table) provides pre-calculated snake_case metrics.
-  // We prioritize those, falling back to on-the-fly calc for backward compat.
-  // IMPORTANT: All percentages and ratios must be rounded to Integers for UI.
+  // Close tooltip on outside tap (mobile)
+  useEffect(() => {
+    if (!showScoreInfo) return;
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (scoreInfoRef.current && !scoreInfoRef.current.contains(e.target as Node)) {
+        setShowScoreInfo(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [showScoreInfo]);
 
-  // 1. Student-Teacher Ratio (Benchmark <= 30)
+  // ── Derived Metrics ──
+  // NOTE: List API returns school_stats rows (no transformSchool), so some fields use
+  // different column names than the detail API. We handle both with fallbacks.
+  const s = school as any; // allow access to school_stats-specific columns
+
   const strRaw = school.student_teacher_ratio ?? (school.totalTeacher > 0 ? school.rowTotal / school.totalTeacher : 0);
   const str = Math.round(strRaw);
-  const isStrGood = str > 0 && str <= 30;
+  const strStatus: 'good' | 'avg' | 'poor' = str > 0 && str <= 30 ? 'good' : str <= 40 ? 'avg' : 'poor';
 
-  // 2. Gender Parity Index (Benchmark 0.97 - 1.03) -> Keep decimals for GPI (index, not %)
-  const gpiValue = school.gender_parity_index ||
-    ((school.rowBoyTotal && school.rowBoyTotal > 0) ? (school.rowGirlTotal / school.rowBoyTotal) : 0);
-  const isGpiGood = gpiValue >= 0.90 && gpiValue <= 1.10;
-
-  // 3. B.Ed Qualification % (Benchmark 100%)
   const bedPctRaw = school.bed_qualification_pct ?? (
     school.totalTeacher > 0 ? ((school.profQual3 || 0) / school.totalTeacher) * 100 : 0
   );
   const bedPct = Math.round(bedPctRaw);
+  const bedStatus: 'good' | 'avg' | 'poor' = bedPct >= 80 ? 'good' : bedPct >= 50 ? 'avg' : 'poor';
 
-  // 4. Regular Teacher % (Benchmark > 80%)
-  const regTeacherPctRaw = school.regular_teacher_pct ?? (
-    school.totalTeacher > 0 ? (school.tchReg / school.totalTeacher) * 100 : 0
-  );
-  const regTeacherPct = Math.round(regTeacherPctRaw);
-
-  // 5. Students Per Classroom (Benchmark 25-35)
   const densityRaw = school.students_per_classroom ?? (
     school.clsrmsGd > 0 ? school.rowTotal / school.clsrmsGd : 0
   );
-  const classroomDensity = Math.round(densityRaw);
-  const isDensityGood = classroomDensity <= 40;
+  const density = Math.round(densityRaw);
+  const densityStatus: 'good' | 'avg' | 'poor' = density <= 35 ? 'good' : density <= 45 ? 'avg' : 'poor';
 
-  // 6. Girls Toilets Per 1000 (Benchmark >= 25)
   const girlToiletsRaw = school.girls_toilets_per_1000 ?? (
     school.rowGirlTotal > 0 ? (school.toiletgFun / school.rowGirlTotal) * 1000 : 0
   );
   const girlToiletsRatio = Math.round(girlToiletsRaw);
-  const isHygineGood = girlToiletsRatio >= 20;
+  const hygieneStatus: 'good' | 'avg' | 'poor' = girlToiletsRatio >= 25 ? 'good' : girlToiletsRatio >= 15 ? 'avg' : 'poor';
 
-  // 7. Furniture Availability (Benchmark 100%)
-  const furniturePctRaw = school.furniture_availability_pct ?? (
-    school.rowTotal > 0 ? ((school.stusHvFurnt || 0) / school.rowTotal) * 100 : 0
-  );
-  const furniturePct = Math.round(furniturePctRaw);
+  // Digital: use raw counts when available (detail page), fall back to pre-computed ratio (list page)
+  const rawDigital = (school.digiBoardTot || 0) + (school.projectorTot || 0);
+  const hasDigital = rawDigital > 0 || Number(s.displays_per_classroom || 0) > 0;
+  const digitalStatus: 'good' | 'avg' | 'poor' = hasDigital ? 'good' : 'poor';
+
+  // Inclusion: raw fields only available on detail page (from schools JOIN); hide on list cards
+  const hasRawInclusion = school.rampsYn !== undefined || school.handrailsYn !== undefined;
+  const inclusionScore = (school.rampsYn ? 1 : 0) + (school.handrailsYn ? 1 : 0);
+  const inclusionStatus: 'good' | 'avg' | 'poor' = inclusionScore >= 2 ? 'good' : inclusionScore === 1 ? 'avg' : 'poor';
+
+  // Fee: school_stats uses `tuition_fee`, detail page uses `tuitionFeeInRupees`
+  const annualFee = school.tuitionFeeInRupees || Number(s.tuition_fee || 0);
+  const monthlyFee = annualFee > 0 ? Math.round(annualFee / 12) : 0;
+
+  // Board: school_stats uses `board` column, detail page maps to `boardSecName`
+  const cleanBoard = (school.boardSecName || s.board || '').replace(/^[0-9]+-/, '');
+
+  // ID: school_stats PK is `udise_code`; detail page maps it to `id` via transformSchool
+  // Always prefer udise_code as canonical identifier (backend resolves it reliably)
+  const udiseCode = String(s.udise_code || school.id || '');
+  const schoolId = udiseCode;
+  const isComparing = isInCompare(schoolId);
+
+  // Overall score
+  const overallScore = calcOverallScore({ str, strStatus, bedPct, density, densityStatus, hygieneStatus, hasDigital });
+  const grade = getGradeLabel(overallScore);
+
+  // School URL — prefer slug for SEO; fallback to UDISE code (backend handles both)
+  const slugValue = school.slug || s.slug || '';
+  const schoolUrl = `/${school.district.toLowerCase().replace(/\s+/g, '-')}/${slugValue || udiseCode}`;
+
+  // WhatsApp share
+  const shareText = `Check out ${school.name} on GetSchoolsInfo — Score: ${overallScore}/10\nhttps://getschoolsinfo.com${schoolUrl}`;
+  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-300 flex flex-col md:flex-row relative">
-      {/* Thumbnail */}
-      <div className="md:w-56 h-48 md:h-auto relative shrink-0 overflow-hidden bg-gray-100">
-        <img
-          src={school.image || '/default-school.jpg'}
-          alt={school.name}
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = '/default-school.jpg';
-          }}
-        />
-        <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
-          <div className="bg-green-100 text-green-800 text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm">
-            <CheckCircle className="w-3 h-3" />
-            {school.schoolStatusName}
-          </div>
-          {school.badge_value_for_money && (
-            <div className="bg-purple-100 text-purple-800 text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm border border-purple-200">
-              💰 Best Value
+    <div className="report-card" style={showScoreInfo ? { position: 'relative', zIndex: 999 } : undefined}>
+      {/* Main content area: grid with score panel */}
+      <div className="grid" style={{ gridTemplateColumns: '1fr 100px', overflow: 'visible' }}>
+        {/* Left: School info */}
+        <div className="p-4 flex flex-col justify-between min-w-0">
+          {/* Header */}
+          <div>
+            <div className="flex items-start gap-2 mb-1.5">
+              <h3 className="text-base font-bold leading-snug line-clamp-2 font-display" style={{ color: 'var(--gsi-text)' }}>
+                {school.name}
+              </h3>
             </div>
-          )}
-          {school.badge_academic_elite && (
-            <div className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm border border-blue-200">
-              🎓 Academic Elite
+            <div className="flex items-center gap-3 mb-2">
+              <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--gsi-text-muted)' }}>
+                <MapPin className="w-3 h-3 shrink-0" />
+                <span className="truncate">{school.block}, {school.district}</span>
+              </div>
+              {cleanBoard && cleanBoard !== 'NA' && (
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded uppercase tracking-wide"
+                  style={{ background: 'var(--gsi-bg-warm)', color: 'var(--gsi-text-secondary)', border: '1px solid var(--gsi-border-light)' }}>
+                  {cleanBoard}
+                </span>
+              )}
+              {monthlyFee > 0 && (
+                <span className="text-xs font-semibold" style={{ color: 'var(--gsi-text)' }}>
+                  ₹{monthlyFee.toLocaleString()}<span className="font-normal" style={{ color: 'var(--gsi-text-muted)' }}>/mo</span>
+                </span>
+              )}
+            </div>
+
+            {/* Badges */}
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {school.badge_value_for_money && (
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md"
+                  style={{ background: 'var(--gsi-accent-light)', color: 'var(--gsi-accent-dark)', border: '1px solid #FDE68A' }}>
+                  Best Value
+                </span>
+              )}
+              {school.badge_academic_elite && (
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md"
+                  style={{ background: 'var(--gsi-primary-50)', color: 'var(--gsi-primary-dark)', border: '1px solid #99F6E4' }}>
+                  Academic Elite
+                </span>
+              )}
+              {school.bndrywallType === 'Pucca' && (
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md"
+                  style={{ background: 'var(--gsi-success-light)', color: '#15803D', border: '1px solid #BBF7D0' }}>
+                  Secure Campus
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Footer actions */}
+          <div className="flex items-center gap-2 pt-2">
+            <Link
+              href={schoolUrl}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white inline-flex items-center gap-1 transition-colors"
+              style={{ background: 'var(--gsi-primary)' }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--gsi-primary-dark)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'var(--gsi-primary)'}
+            >
+              View Details <ChevronRight className="w-3 h-3" />
+            </Link>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleCompare(schoolId);
+              }}
+              className="text-[11px] font-medium flex items-center gap-1 px-2.5 py-1.5 rounded-lg transition-colors"
+              style={{
+                background: isComparing ? 'var(--gsi-primary-50)' : 'transparent',
+                color: isComparing ? 'var(--gsi-primary-dark)' : 'var(--gsi-text-muted)',
+                border: `1px solid ${isComparing ? 'var(--gsi-primary-light)' : 'var(--gsi-border)'}`,
+              }}
+            >
+              <Scale className="w-3 h-3" />
+              {isComparing ? 'Comparing' : '+ Compare'}
+            </button>
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] font-medium flex items-center gap-1 px-2 py-1.5 rounded-lg transition-colors"
+              style={{ color: 'var(--gsi-text-muted)', border: '1px solid var(--gsi-border)' }}
+              title="Share on WhatsApp"
+            >
+              <Share2 className="w-3 h-3" />
+              <span className="hidden sm:inline">Share</span>
+            </a>
+          </div>
+        </div>
+
+        {/* Right: Score panel */}
+        <div className="score-panel relative" ref={scoreInfoRef}>
+          <div className="text-2xl font-extrabold font-display" style={{ color: getMetricColor(overallScore >= 6 ? 'good' : overallScore >= 4 ? 'avg' : 'poor') }}>
+            {overallScore}
+          </div>
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowScoreInfo(!showScoreInfo); }}
+            className="text-[10px] font-medium flex items-center gap-0.5 min-h-[28px]"
+            style={{ color: 'var(--gsi-text-muted)' }}
+            aria-label="How is this score calculated?"
+          >
+            out of 10
+            <Info className="w-3 h-3 opacity-50" />
+          </button>
+          <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${grade.bgClass}`}>
+            {grade.label}
+          </div>
+          {/* Score explanation tooltip — tap toggle for mobile, hover for desktop */}
+          {showScoreInfo && (
+            <div className="absolute right-0 sm:right-auto sm:left-1/2 sm:-translate-x-1/2 top-full mt-2 w-56 p-3 rounded-lg z-50 text-left animate-fade-in"
+              style={{ background: '#1F2937', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.3)' }}>
+              <div className="text-[11px] font-semibold text-white mb-1.5">How is this scored?</div>
+              <div className="text-[10px] text-gray-300 leading-relaxed space-y-1">
+                <div>Student-Teacher Ratio (0-2.5)</div>
+                <div>Teacher Qualifications (0-2.5)</div>
+                <div>Classroom Density (0-2)</div>
+                <div>Hygiene & Sanitation (0-1.5)</div>
+                <div>Digital Equipment (0-1.5)</div>
+              </div>
+              <a href="/how-it-works" className="text-[10px] font-semibold mt-2 inline-block" style={{ color: '#5EEAD4' }}>
+                Full methodology &rarr;
+              </a>
+              <div className="absolute -top-1 right-8 sm:left-1/2 sm:-translate-x-1/2 w-2 h-2 rotate-45" style={{ background: '#1F2937' }} />
             </div>
           )}
         </div>
       </div>
 
-      {/* Content */}
-      <div className="p-4 flex-1 flex flex-col justify-between">
-        <div>
-          <div className="flex justify-between items-start mb-2">
-            <div>
-              <h3 className="text-lg font-bold text-slate-900 leading-tight mb-1">{school.name}</h3>
-              <div className="flex items-center text-slate-500 text-xs">
-                <MapPin className="w-3 h-3 mr-1" />
-                {school.block}, {school.district}
-              </div>
-            </div>
-            <span className="bg-gray-100 text-gray-700 text-[10px] font-bold px-2 py-1 rounded border border-gray-200 uppercase tracking-wide">
-              {school.boardSecName}
-            </span>
+      {/* Bottom: 5 Metric cells */}
+      <div className="metric-cells">
+        {/* Infrastructure */}
+        <div className="metric-cell">
+          <div className="text-[10px] font-medium mb-1" style={{ color: 'var(--gsi-text-muted)' }}>Infra</div>
+          <div className="text-xs font-bold" style={{ color: getMetricColor(densityStatus) }}>
+            {density > 0 ? density : '—'}
           </div>
-
-          {/* Key Metrics Grid - The "Scorecard" */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4 bg-gray-50 p-2 rounded-lg border border-gray-100">
-
-            {/* Metric 1: STR */}
-            <div className="flex flex-col items-center p-1">
-              <span className="text-[10px] uppercase text-gray-500 font-bold flex items-center">
-                STR <InfoTooltip text="Student-Teacher Ratio (Ideal ≤ 30)" />
-              </span>
-              <span className={`text-base font-bold ${isStrGood ? 'text-green-600' : 'text-red-500'}`}>
-                1:{str}
-              </span>
-            </div>
-
-            {/* Metric 2: Class Density */}
-            <div className="flex flex-col items-center p-1 border-l border-gray-200">
-              <span className="text-[10px] uppercase text-gray-500 font-bold flex items-center">
-                Density <InfoTooltip text="Students per Good Classroom (Ideal 25-35)" />
-              </span>
-              <span className={`text-base font-bold ${isDensityGood ? 'text-slate-800' : 'text-red-500'}`}>
-                {classroomDensity}
-              </span>
-            </div>
-
-            {/* Metric 3: Teacher Quality (B.Ed) */}
-            <div className="flex flex-col items-center p-1 border-l border-gray-200">
-              <span className="text-[10px] uppercase text-gray-500 font-bold flex items-center">
-                B.Ed % <InfoTooltip text="% of Teachers with B.Ed qualification" />
-              </span>
-              <span className={`text-base font-bold ${bedPct > 80 ? 'text-green-600' : 'text-yellow-600'}`}>
-                {bedPct}%
-              </span>
-            </div>
-
-            {/* Metric 4: Hygiene (Girls Toilet) */}
-            <div className="flex flex-col items-center p-1 border-l border-gray-200">
-              <span className="text-[10px] uppercase text-gray-500 font-bold flex items-center">
-                G-Toilet <InfoTooltip text="Girls Toilets per 1000 girls (RTE: 25)" />
-              </span>
-              <span className={`text-base font-bold ${isHygineGood ? 'text-green-600' : 'text-red-500'}`}>
-                {girlToiletsRatio}
-              </span>
-            </div>
-          </div>
-
-          {/* Additional Tags (Regular Teachers, Furniture, etc.) */}
-          <div className="flex flex-wrap gap-2 mb-3">
-            <span className={`px-2 py-0.5 text-[10px] font-medium rounded border ${regTeacherPct > 80 ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-orange-50 text-orange-700 border-orange-100'}`}>
-              {regTeacherPct}% Regular Staff
-            </span>
-            {furniturePct < 100 && (
-              <span className="px-2 py-0.5 text-[10px] font-medium rounded border bg-red-50 text-red-700 border-red-100">
-                {100 - furniturePct}% Missing Furniture
-              </span>
-            )}
-            {school.bndrywallType === 'Pucca' && (
-              <span className="px-2 py-0.5 text-[10px] font-medium rounded border bg-emerald-50 text-emerald-700 border-emerald-100">
-                Secure Perimeter
-              </span>
-            )}
+          <div className="text-[9px]" style={{ color: 'var(--gsi-text-muted)' }}>per class</div>
+          <div className="mini-bar-track mt-1.5">
+            <div className="mini-bar-fill" style={{ width: density > 0 ? `${Math.max(10, Math.min(100, ((50 - density) / 50) * 100))}%` : '0%', background: getMetricColor(densityStatus) }} />
           </div>
         </div>
 
-        <div className="flex items-center justify-between border-t border-gray-100 pt-3">
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              console.log("SchoolCard Compare Clicked:", school.id, typeof school.id);
-              toggleCompare(String(school.id));
-            }}
-            className={`text-xs font-bold flex items-center gap-1 transition-colors ${isComparing ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
-          >
-            <Scale className={`w-4 h-4 ${isComparing ? 'fill-blue-100' : ''}`} />
-            {isComparing ? 'Comparing' : 'Compare'}
-          </button>
+        {/* Academic */}
+        <div className="metric-cell">
+          <div className="text-[10px] font-medium mb-1" style={{ color: 'var(--gsi-text-muted)' }}>Academic</div>
+          <div className="text-xs font-bold" style={{ color: getMetricColor(bedStatus) }}>
+            {bedPct}%
+          </div>
+          <div className="text-[9px]" style={{ color: 'var(--gsi-text-muted)' }}>qualified</div>
+          <div className="mini-bar-track mt-1.5">
+            <div className="mini-bar-fill" style={{ width: `${bedPct}%`, background: getMetricColor(bedStatus) }} />
+          </div>
+        </div>
 
-          <div className="flex items-center gap-3">
-            <div className="text-[10px] text-gray-400 font-medium">
-              Fee: ₹{(school.tuitionFeeInRupees / 12).toFixed(0)}/mo
-            </div>
-            <Link
-              href={`/${school.district.toLowerCase().replace(/\s+/g, '-')}/${school.slug || 'school-' + school.id}`}
-              className="bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded hover:bg-slate-800 transition-colors"
-            >
-              View Report
-            </Link>
+        {/* Safety */}
+        <div className="metric-cell">
+          <div className="text-[10px] font-medium mb-1" style={{ color: 'var(--gsi-text-muted)' }}>Safety</div>
+          <div className="text-xs font-bold" style={{ color: getMetricColor(hygieneStatus) }}>
+            {hygieneStatus === 'good' ? 'Good' : hygieneStatus === 'avg' ? 'Fair' : 'Low'}
+          </div>
+          <div className="text-[9px]" style={{ color: 'var(--gsi-text-muted)' }}>hygiene</div>
+          <div className="mini-bar-track mt-1.5">
+            <div className="mini-bar-fill" style={{ width: hygieneStatus === 'good' ? '100%' : hygieneStatus === 'avg' ? '60%' : '25%', background: getMetricColor(hygieneStatus) }} />
+          </div>
+        </div>
+
+        {/* Digital */}
+        <div className="metric-cell">
+          <div className="text-[10px] font-medium mb-1" style={{ color: 'var(--gsi-text-muted)' }}>Digital</div>
+          <div className="text-xs font-bold" style={{ color: getMetricColor(digitalStatus) }}>
+            {hasDigital ? 'Yes' : 'No'}
+          </div>
+          <div className="text-[9px]" style={{ color: 'var(--gsi-text-muted)' }}>smart class</div>
+          <div className="mini-bar-track mt-1.5">
+            <div className="mini-bar-fill" style={{ width: hasDigital ? '100%' : '0%', background: getMetricColor(digitalStatus) }} />
+          </div>
+        </div>
+
+        {/* Inclusion */}
+        <div className="metric-cell">
+          <div className="text-[10px] font-medium mb-1" style={{ color: 'var(--gsi-text-muted)' }}>Inclusion</div>
+          <div className="text-xs font-bold" style={{ color: hasRawInclusion ? getMetricColor(inclusionStatus) : 'var(--gsi-text-muted)' }}>
+            {hasRawInclusion ? `${inclusionScore}/2` : '—'}
+          </div>
+          <div className="text-[9px]" style={{ color: 'var(--gsi-text-muted)' }}>access</div>
+          <div className="mini-bar-track mt-1.5">
+            <div className="mini-bar-fill" style={{ width: hasRawInclusion ? `${(inclusionScore / 2) * 100}%` : '0%', background: hasRawInclusion ? getMetricColor(inclusionStatus) : 'var(--gsi-border)' }} />
           </div>
         </div>
       </div>

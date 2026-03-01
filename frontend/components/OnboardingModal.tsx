@@ -75,16 +75,19 @@ export function OnboardingModal() {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300 border border-gray-100">
+            <div className="rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300" style={{ background: 'var(--gsi-surface)', border: '1px solid var(--gsi-border-light)' }}>
 
                 <div className="p-8">
-                    {/* Header Section (Matching Login Page) */}
+                    {/* Header Section */}
                     <div className="text-center mb-8">
-                        <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold mx-auto mb-4 shadow-lg shadow-blue-200">
+                        <div
+                            className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold mx-auto mb-4 shadow-lg"
+                            style={{ background: 'var(--gsi-primary)', boxShadow: '0 4px 14px -3px rgba(13, 148, 136, 0.3)' }}
+                        >
                             <GraduationCap className="w-6 h-6" />
                         </div>
-                        <h2 className="text-2xl font-extrabold text-slate-900">Complete Profile</h2>
-                        <p className="text-sm text-slate-500 mt-2">
+                        <h2 className="text-2xl font-extrabold font-display" style={{ color: 'var(--gsi-text)' }}>Complete Profile</h2>
+                        <p className="text-sm mt-2" style={{ color: 'var(--gsi-text-muted)' }}>
                             Just a few more details to personalize your experience.
                         </p>
                     </div>
@@ -100,19 +103,22 @@ export function OnboardingModal() {
 
                         {/* Phone Number */}
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Phone Number <span className="text-red-500">*</span></label>
+                            <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--gsi-text-secondary)' }}>Phone Number <span className="text-red-500">*</span></label>
                             <div className="relative group">
-                                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors">
+                                <div className="absolute left-3 top-1/2 -translate-y-1/2 group-focus-within:text-teal-500 transition-colors" style={{ color: 'var(--gsi-text-muted)' }}>
                                     <Phone className="w-5 h-5" />
                                 </div>
-                                <div className="absolute left-10 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium border-r border-gray-200 pr-2 mr-2">
+                                <div className="absolute left-10 top-1/2 -translate-y-1/2 text-sm font-medium pr-2 mr-2" style={{ color: 'var(--gsi-text-muted)', borderRight: '1px solid var(--gsi-border)' }}>
                                     +91
                                 </div>
                                 <input
                                     type="tel"
                                     value={phone}
                                     onChange={(e) => setPhone(e.target.value)}
-                                    className="w-full pl-20 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-gray-50 focus:bg-white text-gray-900 placeholder:text-gray-400"
+                                    className="w-full pl-20 pr-4 py-3 rounded-xl outline-none transition-all"
+                                    style={{ border: '1px solid var(--gsi-border)', background: 'var(--gsi-bg-warm)', color: 'var(--gsi-text)' }}
+                                    onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--gsi-primary)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(13, 148, 136, 0.1)'; e.currentTarget.style.background = 'var(--gsi-surface)'; }}
+                                    onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--gsi-border)'; e.currentTarget.style.boxShadow = ''; e.currentTarget.style.background = 'var(--gsi-bg-warm)'; }}
                                     placeholder="9876543210"
                                     required
                                 />
@@ -121,16 +127,19 @@ export function OnboardingModal() {
 
                         {/* Student Name */}
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Student Name <span className="text-red-500">*</span></label>
+                            <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--gsi-text-secondary)' }}>Student Name <span className="text-red-500">*</span></label>
                             <div className="relative group">
-                                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors">
+                                <div className="absolute left-3 top-1/2 -translate-y-1/2 group-focus-within:text-teal-500 transition-colors" style={{ color: 'var(--gsi-text-muted)' }}>
                                     <User className="w-5 h-5" />
                                 </div>
                                 <input
                                     type="text"
                                     value={studentName}
                                     onChange={(e) => setStudentName(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-gray-50 focus:bg-white text-gray-900 placeholder:text-gray-400"
+                                    className="w-full pl-10 pr-4 py-3 rounded-xl outline-none transition-all"
+                                    style={{ border: '1px solid var(--gsi-border)', background: 'var(--gsi-bg-warm)', color: 'var(--gsi-text)' }}
+                                    onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--gsi-primary)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(13, 148, 136, 0.1)'; e.currentTarget.style.background = 'var(--gsi-surface)'; }}
+                                    onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--gsi-border)'; e.currentTarget.style.boxShadow = ''; e.currentTarget.style.background = 'var(--gsi-bg-warm)'; }}
                                     placeholder="Enter child's name"
                                     required
                                 />
@@ -139,12 +148,15 @@ export function OnboardingModal() {
 
                         {/* Class Selection */}
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Admission For Class <span className="text-red-500">*</span></label>
+                            <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--gsi-text-secondary)' }}>Admission For Class <span className="text-red-500">*</span></label>
                             <div className="relative">
                                 <select
                                     value={studentClass}
                                     onChange={(e) => setStudentClass(e.target.value)}
-                                    className="w-full pl-4 pr-10 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all appearance-none bg-gray-50 focus:bg-white text-gray-900"
+                                    className="w-full pl-4 pr-10 py-3 rounded-xl outline-none transition-all appearance-none"
+                                    style={{ border: '1px solid var(--gsi-border)', background: 'var(--gsi-bg-warm)', color: 'var(--gsi-text)' }}
+                                    onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--gsi-primary)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(13, 148, 136, 0.1)'; e.currentTarget.style.background = 'var(--gsi-surface)'; }}
+                                    onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--gsi-border)'; e.currentTarget.style.boxShadow = ''; e.currentTarget.style.background = 'var(--gsi-bg-warm)'; }}
                                     required
                                 >
                                     <option value="" disabled>Select Class</option>
@@ -153,7 +165,7 @@ export function OnboardingModal() {
                                     ))}
                                 </select>
                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                                    <svg className="w-4 h-4" style={{ color: 'var(--gsi-text-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
                                 </div>
                             </div>
                         </div>
@@ -162,7 +174,10 @@ export function OnboardingModal() {
                         <button
                             type="submit"
                             disabled={pageLoading}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-200 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed mt-2"
+                            className="w-full text-white font-bold py-3.5 rounded-xl shadow-lg transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed mt-2"
+                            style={{ background: 'var(--gsi-primary)', boxShadow: '0 4px 14px -3px rgba(13, 148, 136, 0.3)' }}
+                            onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = 'var(--gsi-primary-dark)'; }}
+                            onMouseLeave={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = 'var(--gsi-primary)'; }}
                         >
                             {pageLoading ? (
                                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -176,8 +191,8 @@ export function OnboardingModal() {
                 </div>
 
                 {/* Footer Strip */}
-                <div className="bg-gray-50 px-8 py-4 border-t border-gray-100 text-center">
-                    <p className="text-xs text-slate-400">
+                <div className="px-8 py-4 text-center" style={{ borderTop: '1px solid var(--gsi-border-light)', background: 'var(--gsi-primary-50)' }}>
+                    <p className="text-xs" style={{ color: 'var(--gsi-text-muted)' }}>
                         Your information is safe with us.
                     </p>
                 </div>

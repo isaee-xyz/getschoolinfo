@@ -8,14 +8,12 @@ import SchoolList from '@/components/SchoolList';
 
 function SearchContent() {
     const searchParams = useSearchParams();
-    // Default to Bathinda if no location/search is provided (per user requirement)
-    // But if 'search' (text) is present, we might search globally? 
-    // For now, consistent default:
     const districtParam = searchParams.get('district');
-    const filterParam = searchParams.get('filter'); // 'academic' etc.
-    // If district is NULL (not in URL), default to Bathinda.
-    // If district is empty string (explicitly cleared), keep it empty (All).
-    const effectiveDistrict = districtParam === null ? 'Bathinda' : districtParam;
+    const filterParam = searchParams.get('filter');
+    const stateSearchParam = searchParams.get('state');
+    const searchQueryParam = searchParams.get('search');
+    // Only default to Bathinda if no other search criteria provided
+    const effectiveDistrict = (districtParam === null && !stateSearchParam && !searchQueryParam && !filterParam) ? 'Bathinda' : districtParam;
 
     const [schools, setSchools] = React.useState<any[]>([]);
     const [loading, setLoading] = React.useState(true);
@@ -23,20 +21,15 @@ function SearchContent() {
     React.useEffect(() => {
         const fetchSchools = async () => {
             try {
-                // Construct query string
                 const params = new URLSearchParams();
 
-                // Always pass district unless user is searching text globally
-                // Here we stick to "SchoolList" behavior: default to Bathinda
                 if (effectiveDistrict) params.append('district', effectiveDistrict);
 
-                // Add support for state and search
                 const stateParam = searchParams.get('state');
                 const queryParam = searchParams.get('search');
                 if (stateParam) params.append('state', stateParam);
                 if (queryParam) params.append('search', queryParam);
 
-                // Handle 'filter' -> 'sort'
                 if (filterParam === 'academic') {
                     params.append('sort', 'academic');
                 }
@@ -45,10 +38,10 @@ function SearchContent() {
                 if (!res.ok) throw new Error('Failed to fetch');
                 const rawData = await res.json();
 
-                // Map raw data to ensure 'id' property exists for SchoolCard
                 const data = Array.isArray(rawData) ? rawData.map((s: any) => ({
                     ...s,
-                    id: String(s.id || s._id || s.udise_code || Math.random()) // Fallback to unique ID
+                    // Always use udise_code as the canonical ID (it's the PK in school_stats)
+                    id: String(s.udise_code || s.id || s._id || Math.random())
                 })) : [];
 
                 setSchools(data);
@@ -62,13 +55,37 @@ function SearchContent() {
     }, [effectiveDistrict, searchParams, filterParam]);
 
     if (loading) {
-        return <div className="container mx-auto p-8 text-center text-slate-500">Loading schools data...</div>;
+        return (
+            <div className="container mx-auto p-12 text-center">
+                <div className="inline-flex items-center gap-3" style={{ color: 'var(--gsi-text-muted)' }}>
+                    <div className="w-5 h-5 rounded-full animate-spin" style={{ border: '2px solid var(--gsi-border)', borderTopColor: 'var(--gsi-primary)' }} />
+                    <span className="text-sm font-medium">Loading schools...</span>
+                </div>
+            </div>
+        );
+    }
+
+    // Build a descriptive title based on what filters are active
+    const titleParts: string[] = [];
+    if (effectiveDistrict) titleParts.push(effectiveDistrict);
+    if (stateSearchParam) titleParts.push(stateSearchParam.charAt(0).toUpperCase() + stateSearchParam.slice(1).toLowerCase());
+    const locationStr = titleParts.length > 0 ? titleParts.join(', ') : '';
+
+    let title: string;
+    if (searchQueryParam) {
+        title = `Results for "${searchQueryParam}"${locationStr ? ` in ${locationStr}` : ''}`;
+    } else if (locationStr) {
+        title = `Schools in ${locationStr}${filterParam ? ` (${filterParam})` : ''}`;
+    } else if (filterParam) {
+        title = `Schools -- ${filterParam}`;
+    } else {
+        title = 'All Schools';
     }
 
     return (
         <SchoolList
-            initialFilters={{ district: effectiveDistrict, location: '' }}
-            title={effectiveDistrict ? `Schools in ${effectiveDistrict} ${filterParam ? `(${filterParam})` : ''}` : undefined}
+            initialFilters={{ district: effectiveDistrict || '', state: stateSearchParam || '', location: '' }}
+            title={title}
             schools={schools}
         />
     );
@@ -78,9 +95,18 @@ export default function SearchPage() {
     return (
         <>
             <Header />
-            <Suspense fallback={<div className="container mx-auto p-8 text-center text-slate-500">Loading schools...</div>}>
-                <SearchContent />
-            </Suspense>
+            <main className="min-h-screen" style={{ background: 'var(--gsi-bg)' }}>
+                <Suspense fallback={
+                    <div className="container mx-auto p-12 text-center">
+                        <div className="inline-flex items-center gap-3" style={{ color: 'var(--gsi-text-muted)' }}>
+                            <div className="w-5 h-5 rounded-full animate-spin" style={{ border: '2px solid var(--gsi-border)', borderTopColor: 'var(--gsi-primary)' }} />
+                            <span className="text-sm font-medium">Loading schools...</span>
+                        </div>
+                    </div>
+                }>
+                    <SearchContent />
+                </Suspense>
+            </main>
             <Footer />
         </>
     );

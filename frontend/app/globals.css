@@ -1,21 +1,456 @@
-@import "tailwindcss";
+@import "tailwindcss/preflight" layer(base);
+@import "tailwindcss/theme" layer(theme);
+@import "tailwindcss/utilities" layer(utilities);
+
+/* ============================================
+   GetSchoolsInfo Design System — Round 3
+   Direction: "Trustworthy Report Card"
+   Fonts: Outfit (headings) + Inter (body)
+   Palette: Warm cream + Teal + Amber
+   ============================================ */
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand Colors — Trustworthy Teal */
+  --gsi-primary: #0D9488;
+  --gsi-primary-dark: #0F766E;
+  --gsi-primary-darker: #115E59;
+  --gsi-primary-light: #99F6E4;
+  --gsi-primary-50: #F0FDFA;
+
+  /* Accent — Warm Amber */
+  --gsi-accent: #D97706;
+  --gsi-accent-dark: #B45309;
+  --gsi-accent-light: #FEF3C7;
+
+  /* Semantic */
+  --gsi-success: #16A34A;
+  --gsi-success-light: #DCFCE7;
+  --gsi-warning: #D97706;
+  --gsi-warning-light: #FEF3C7;
+  --gsi-danger: #DC2626;
+  --gsi-danger-light: #FEE2E2;
+
+  /* Neutrals — Warm Cream Palette */
+  --gsi-text: #1A1A1A;
+  --gsi-text-secondary: #5C5C5C;
+  --gsi-text-muted: #8C8C8C;
+  --gsi-bg: #FAFAF8;
+  --gsi-bg-warm: #F5F3EF;
+  --gsi-surface: #FFFFFF;
+  --gsi-border: #E8E5DF;
+  --gsi-border-light: #F0EDE8;
+
+  /* Shadows — Soft */
+  --gsi-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.03);
+  --gsi-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --gsi-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.03);
+  --gsi-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.03);
+
+  /* Radii — Softer */
+  --gsi-radius-sm: 8px;
+  --gsi-radius: 10px;
+  --gsi-radius-md: 12px;
+  --gsi-radius-lg: 16px;
+  --gsi-radius-xl: 20px;
+  --gsi-radius-full: 9999px;
+
+  /* Layout */
+  --background: var(--gsi-bg);
+  --foreground: var(--gsi-text);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-outfit);
+
+  /* Expose brand colors to Tailwind */
+  --color-gsi-primary: var(--gsi-primary);
+  --color-gsi-primary-dark: var(--gsi-primary-dark);
+  --color-gsi-primary-50: var(--gsi-primary-50);
+  --color-gsi-accent: var(--gsi-accent);
+  --color-gsi-accent-light: var(--gsi-accent-light);
+  --color-gsi-success: var(--gsi-success);
+  --color-gsi-warning: var(--gsi-warning);
+  --color-gsi-danger: var(--gsi-danger);
+  --color-gsi-bg: var(--gsi-bg);
+  --color-gsi-bg-warm: var(--gsi-bg-warm);
+  --color-gsi-border: var(--gsi-border);
+  --color-gsi-border-light: var(--gsi-border-light);
+  --color-gsi-text: var(--gsi-text);
+  --color-gsi-text-secondary: var(--gsi-text-secondary);
+  --color-gsi-text-muted: var(--gsi-text-muted);
 }
 
-
+/* ============================================
+   Base Styles
+   ============================================ */
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ============================================
+   Display Typography (Outfit)
+   ============================================ */
+
+.font-display {
+  font-family: var(--font-outfit), 'Outfit', -apple-system, sans-serif;
+}
+
+.text-display {
+  font-family: var(--font-outfit), 'Outfit', -apple-system, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+
+.text-display-sm {
+  font-family: var(--font-outfit), 'Outfit', -apple-system, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+}
+
+/* ============================================
+   Custom Scrollbar
+   ============================================ */
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--gsi-border);
+  border-radius: var(--gsi-radius-full);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--gsi-text-muted);
+}
+
+/* ============================================
+   Metric Gauge Bars
+   ============================================ */
+
+.metric-gauge {
+  height: 4px;
+  border-radius: var(--gsi-radius-full);
+  background: var(--gsi-border);
+  overflow: hidden;
+}
+
+.metric-gauge-fill {
+  height: 100%;
+  border-radius: var(--gsi-radius-full);
+  transition: width 0.6s ease;
+}
+
+/* ============================================
+   Focus Styles
+   ============================================ */
+
+*:focus-visible {
+  outline: 2px solid var(--gsi-primary);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ============================================
+   Selection
+   ============================================ */
+
+::selection {
+  background: var(--gsi-primary-light);
+  color: var(--gsi-primary-darker);
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out forwards;
+}
+
+/* Stagger children */
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 60ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 120ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 180ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 240ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 300ms; }
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.2); }
+  50% { box-shadow: 0 0 0 8px rgba(13, 148, 136, 0); }
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.5s ease-out forwards;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.5s ease-out forwards;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+/* ============================================
+   Report Card Components
+   ============================================ */
+
+/* Card with hover elevation */
+.card-elevated {
+  background: var(--gsi-surface);
+  border: 1px solid var(--gsi-border);
+  border-radius: var(--gsi-radius-md);
+  transition: all 0.2s ease;
+}
+
+.card-elevated:hover {
+  border-color: #D0CCC6;
+  box-shadow: var(--gsi-shadow-md);
+}
+
+/* Report card school listing */
+.report-card {
+  background: var(--gsi-surface);
+  border: 1px solid var(--gsi-border);
+  border-radius: var(--gsi-radius-md);
+  overflow: visible;
+  transition: box-shadow 0.2s ease;
+}
+
+.report-card:hover {
+  box-shadow: var(--gsi-shadow-md);
+}
+
+/* Score panel (right side of report card) */
+.score-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  border-left: 1px solid var(--gsi-border-light);
+  background: var(--gsi-bg);
+  text-align: center;
+  gap: 2px;
+  overflow: visible;
+  position: relative;
+}
+
+/* Metric cells (bottom row of report card) */
+.metric-cells {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  border-top: 1px solid var(--gsi-border-light);
+}
+
+.metric-cell {
+  padding: 10px 12px;
+  text-align: center;
+  border-right: 1px solid var(--gsi-border-light);
+}
+
+.metric-cell:last-child {
+  border-right: none;
+}
+
+/* Mini bar charts for score panel */
+.mini-bar-track {
+  height: 5px;
+  background: var(--gsi-border-light);
+  border-radius: var(--gsi-radius-full);
+  overflow: hidden;
+}
+
+.mini-bar-fill {
+  height: 100%;
+  border-radius: var(--gsi-radius-full);
+  transition: width 0.5s ease-out;
+}
+
+/* ============================================
+   Design Utilities
+   ============================================ */
+
+/* Section alternating backgrounds */
+.section-teal {
+  background: var(--gsi-primary-50);
+}
+
+.section-warm {
+  background: var(--gsi-bg-warm);
+}
+
+/* Subtle grain texture overlay */
+.grain-overlay {
+  position: relative;
+}
+
+.grain-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.025;
+  pointer-events: none;
+  z-index: 1;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+}
+
+/* Subtle dot-grid background pattern */
+.bg-dot-grid {
+  background-image: radial-gradient(circle, var(--gsi-primary) 1px, transparent 1px);
+  background-size: 32px 32px;
+  opacity: 0.03;
+}
+
+/* Teal gradient background for hero/banner sections */
+.bg-gsi-gradient {
+  background: linear-gradient(135deg, var(--gsi-primary-darker) 0%, var(--gsi-primary) 50%, var(--gsi-primary-dark) 100%);
+}
+
+/* Metric progress bars */
+.metric-bar {
+  height: 6px;
+  border-radius: var(--gsi-radius-full);
+  background: var(--gsi-border);
+  overflow: hidden;
+}
+
+.metric-bar-fill {
+  height: 100%;
+  border-radius: var(--gsi-radius-full);
+  transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Section divider with angled shape */
+.section-divider {
+  position: relative;
+}
+
+.section-divider::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 40px;
+  background: inherit;
+  clip-path: polygon(0 0, 100% 60%, 100% 100%, 0% 100%);
+}
+
+/* Left accent border for legal/policy pages */
+.legal-section {
+  border-left: 3px solid var(--gsi-primary);
+  padding-left: 1rem;
+}
+
+/* Score colors */
+.score-excellent { color: var(--gsi-success); }
+.score-good { color: var(--gsi-primary); }
+.score-fair { color: var(--gsi-warning); }
+.score-poor { color: var(--gsi-danger); }
+
+.score-bg-excellent { background: var(--gsi-success-light); color: #15803D; }
+.score-bg-good { background: var(--gsi-primary-50); color: var(--gsi-primary); }
+.score-bg-fair { background: var(--gsi-warning-light); color: var(--gsi-accent-dark); }
+.score-bg-poor { background: var(--gsi-danger-light); color: #B91C1C; }
+
+/* Hide scrollbar for horizontal scroll containers (mobile state chips etc.) */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Touch-friendly tap targets — ensures minimum 44px */
+@media (pointer: coarse) {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }
