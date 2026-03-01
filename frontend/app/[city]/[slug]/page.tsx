@@ -1,30 +1,31 @@
 import React from 'react';
 import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import SchoolDetailClient from './SchoolDetailClient';
+import SchoolDetailFetcher from './SchoolDetailFetcher';
 import { School } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
-// Fallback for build time or if env not set
-// Fallback for build time or if env not set
+// Server-side API URL (may differ from client-side in production)
 const API_URL = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
 async function getSchool(slug: string): Promise<School | null> {
     try {
-        const res = await fetch(`${API_URL}/school/${slug}`, {
-            cache: 'no-store' // Ensure fresh data on every request
+        const url = `${API_URL}/school/${slug}`;
+        console.log('[SchoolDetail] Fetching:', url);
+        const res = await fetch(url, {
+            cache: 'no-store'
         });
 
         if (!res.ok) {
-            if (res.status === 404) return null;
-            throw new Error(`Failed to fetch school: ${res.status}`);
+            console.error(`[SchoolDetail] API returned ${res.status} for slug: ${slug}`);
+            return null;
         }
 
         return res.json();
     } catch (error) {
-        console.error("Error fetching school:", error);
-        return null; // Handle gracefully
+        console.error("[SchoolDetail] Server-side fetch failed:", error);
+        return null;
     }
 }
 
@@ -38,8 +39,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     if (!school) {
         return {
-            title: 'School Not Found',
-            description: 'The requested school could not be found.'
+            title: 'School Details | GetSchoolsInfo',
+            description: 'View detailed school information including fees, infrastructure, and academic metrics.'
         };
     }
 
@@ -72,34 +73,36 @@ export default async function SchoolDetailPage({ params }: Props) {
     const { city, slug } = await params;
     const school = await getSchool(slug);
 
-    if (!school) {
-        notFound();
+    if (school) {
+        // Server-side fetch succeeded -- render directly
+        const jsonLd = {
+            "@context": "https://schema.org",
+            "@type": "EducationalOrganization",
+            "name": school.name,
+            "address": {
+                "@type": "PostalAddress",
+                "streetAddress": school.village,
+                "addressLocality": school.district,
+                "addressRegion": school.state,
+                "postalCode": school.pincode,
+                "addressCountry": "IN"
+            },
+            "url": `https://getschoolsinfo.com/${city}/${slug}`,
+            "image": school.image
+        };
+
+        return (
+            <>
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+                />
+                <SchoolDetailClient school={school} />
+            </>
+        );
     }
 
-    // JSON-LD
-    const jsonLd = {
-        "@context": "https://schema.org",
-        "@type": "EducationalOrganization",
-        "name": school.name,
-        "address": {
-            "@type": "PostalAddress",
-            "streetAddress": school.village,
-            "addressLocality": school.district,
-            "addressRegion": school.state, // Assuming state field exists in DB/Type
-            "postalCode": school.pincode,
-            "addressCountry": "IN"
-        },
-        "url": `https://getschoolsinfo.com/${city}/${slug}`,
-        "image": school.image
-    };
-
-    return (
-        <>
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-            />
-            <SchoolDetailClient school={school} />
-        </>
-    );
+    // Server-side fetch failed -- fall back to client-side fetch
+    // This handles cases where the server can't reach the API (e.g., different network)
+    return <SchoolDetailFetcher slug={slug} city={city} />;
 }
