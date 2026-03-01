@@ -6,25 +6,34 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useLocations } from '@/hooks/useLocations';
 import {
-  ShieldCheck, Database, GraduationCap, IndianRupee,
-  Building2, MapPin, RefreshCw, Search, ChevronRight, CheckCircle2,
-  Scale, ArrowRight, TrendingUp, FileText, BarChart3,
-  Users
+    ShieldCheck, Database, GraduationCap, IndianRupee,
+    Building2, MapPin, RefreshCw, Search, ChevronRight, CheckCircle2,
+    Scale, ArrowRight, TrendingUp, FileText, BarChart3,
+    Users
 } from 'lucide-react';
 
-const topStates = [
-  { name: 'Telangana', state: 'TELANGANA', count: 5278 },
-  { name: 'Karnataka', state: 'KARNATAKA', count: 5169 },
-  { name: 'Maharashtra', state: 'MAHARASHTRA', count: 4821 },
-  { name: 'Tamil Nadu', state: 'TAMILNADU', count: 3211 },
-  { name: 'Andhra Pradesh', state: 'ANDHRA PRADESH', count: 3116 },
-  { name: 'Madhya Pradesh', state: 'MADHYA PRADESH', count: 2909 },
-  { name: 'Rajasthan', state: 'RAJASTHAN', count: 2195 },
-  { name: 'Uttar Pradesh', state: 'UTTAR PRADESH', count: 1582 },
-];
+// Display names for known state keys coming from UDISE DB
+const STATE_DISPLAY_NAMES: Record<string, string> = {
+    'TELANGANA': 'Telangana',
+    'KARNATAKA': 'Karnataka',
+    'MAHARASHTRA': 'Maharashtra',
+    'TAMILNADU': 'Tamil Nadu',
+    'ANDHRA PRADESH': 'Andhra Pradesh',
+    'MADHYA PRADESH': 'Madhya Pradesh',
+    'RAJASTHAN': 'Rajasthan',
+    'UTTAR PRADESH': 'Uttar Pradesh',
+    'GUJARAT': 'Gujarat',
+    'WEST BENGAL': 'West Bengal',
+    'BIHAR': 'Bihar',
+    'PUNJAB': 'Punjab',
+    'HARYANA': 'Haryana',
+    'KERALA': 'Kerala',
+};
+
+type StateCount = { state: string; count: number };
 
 // Auto-sliding state pills for mobile
-function MobileStateMarquee({ states }: { states: typeof topStates }) {
+function MobileStateMarquee({ states }: { states: StateCount[] }) {
     const router = useRouter();
     const scrollRef = useRef<HTMLDivElement>(null);
     const isPaused = useRef(false);
@@ -77,7 +86,7 @@ function MobileStateMarquee({ states }: { states: typeof topStates }) {
             >
                 {doubledStates.map((st, i) => (
                     <button
-                        key={`${st.name}-${i}`}
+                        key={`${st.state}-${i}`}
                         onClick={() => router.push(`/search?state=${encodeURIComponent(st.state)}`)}
                         className="flex items-center gap-2 px-3 py-2 shrink-0 text-sm font-medium transition-colors active:scale-95"
                         style={{
@@ -88,7 +97,7 @@ function MobileStateMarquee({ states }: { states: typeof topStates }) {
                         }}
                     >
                         <MapPin className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--gsi-primary)' }} />
-                        {st.name}
+                        {STATE_DISPLAY_NAMES[st.state] || st.state}
                         <span className="text-[11px] tabular-nums" style={{ color: 'var(--gsi-text-muted)' }}>
                             {st.count.toLocaleString()}
                         </span>
@@ -108,12 +117,18 @@ export default function HomeClient() {
     // Dynamic Counter Logic
     const [schoolCount, setSchoolCount] = useState(0);
     const [displayCount, setDisplayCount] = useState(0);
+    const [topStates, setTopStates] = useState<StateCount[]>([]);
 
     useEffect(() => {
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/stats/total-schools`)
             .then(res => res.json())
-            .then(data => {
-                if (data.count) setSchoolCount(data.count);
+            .then(data => { if (data.count) setSchoolCount(data.count); })
+            .catch(err => console.error(err));
+
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/stats/states`)
+            .then(res => res.json())
+            .then((data: StateCount[]) => {
+                if (Array.isArray(data)) setTopStates(data.slice(0, 8));
             })
             .catch(err => console.error(err));
     }, []);
@@ -212,7 +227,7 @@ export default function HomeClient() {
                                 </div>
 
                                 <h1 className="text-display text-3xl md:text-5xl mb-4 animate-fade-in-up" style={{ color: 'var(--gsi-text)' }}>
-                                    38,312 schools.
+                                    {displayCount > 0 ? displayCount.toLocaleString() : '38,000+'} schools.
                                     <br />
                                     <span style={{ color: 'var(--gsi-primary)' }}>Real data. No opinions.</span>
                                 </h1>
@@ -315,9 +330,9 @@ export default function HomeClient() {
                                     Browse by State
                                 </h3>
                                 <div className="grid grid-cols-2 gap-3 stagger-children">
-                                    {topStates.map((st, i) => (
+                                    {topStates.length > 0 ? topStates.map((st) => (
                                         <button
-                                            key={st.name}
+                                            key={st.state}
                                             onClick={() => router.push(`/search?state=${encodeURIComponent(st.state)}`)}
                                             className="flex items-center gap-3 p-3 text-left transition-all duration-200 cursor-pointer group animate-fade-in-up"
                                             style={{
@@ -340,13 +355,15 @@ export default function HomeClient() {
                                             </div>
                                             <div className="min-w-0">
                                                 <div className="text-sm font-semibold group-hover:text-teal-700 transition-colors truncate" style={{ color: 'var(--gsi-text)' }}>
-                                                    {st.name}
+                                                    {STATE_DISPLAY_NAMES[st.state] || st.state.replace(/_/g, ' ')}
                                                 </div>
                                                 <div className="text-[11px] tabular-nums" style={{ color: 'var(--gsi-text-muted)' }}>
                                                     {st.count.toLocaleString()} schools
                                                 </div>
                                             </div>
                                         </button>
+                                    )) : Array.from({ length: 6 }).map((_, i) => (
+                                        <div key={i} className="h-16 rounded-lg animate-pulse" style={{ background: 'var(--gsi-border-light)', borderRadius: 'var(--gsi-radius)' }} />
                                     ))}
                                 </div>
                             </div>
@@ -406,21 +423,21 @@ export default function HomeClient() {
                                         style={{ background: 'var(--gsi-primary-50)', border: '2px solid #CCFBF1' }}>
                                         <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
                                             {/* Phone body */}
-                                            <rect x="22" y="10" width="36" height="60" rx="6" fill="white" stroke="#0D9488" strokeWidth="2"/>
-                                            <rect x="26" y="16" width="28" height="44" rx="2" fill="#F0FDFA"/>
+                                            <rect x="22" y="10" width="36" height="60" rx="6" fill="white" stroke="#0D9488" strokeWidth="2" />
+                                            <rect x="26" y="16" width="28" height="44" rx="2" fill="#F0FDFA" />
                                             {/* Search bar on phone screen */}
-                                            <rect x="29" y="22" width="22" height="6" rx="3" fill="#CCFBF1" stroke="#0D9488" strokeWidth="1"/>
-                                            <circle cx="33" cy="25" r="1.5" fill="#0D9488"/>
+                                            <rect x="29" y="22" width="22" height="6" rx="3" fill="#CCFBF1" stroke="#0D9488" strokeWidth="1" />
+                                            <circle cx="33" cy="25" r="1.5" fill="#0D9488" />
                                             {/* Search results lines */}
-                                            <rect x="29" y="33" width="22" height="3" rx="1.5" fill="#E0F2FE" opacity="0.8"/>
-                                            <rect x="29" y="39" width="18" height="3" rx="1.5" fill="#E0F2FE" opacity="0.6"/>
-                                            <rect x="29" y="45" width="20" height="3" rx="1.5" fill="#E0F2FE" opacity="0.4"/>
+                                            <rect x="29" y="33" width="22" height="3" rx="1.5" fill="#E0F2FE" opacity="0.8" />
+                                            <rect x="29" y="39" width="18" height="3" rx="1.5" fill="#E0F2FE" opacity="0.6" />
+                                            <rect x="29" y="45" width="20" height="3" rx="1.5" fill="#E0F2FE" opacity="0.4" />
                                             {/* Home button */}
-                                            <circle cx="40" cy="64" r="2.5" stroke="#CBD5E1" strokeWidth="1.5" fill="none"/>
+                                            <circle cx="40" cy="64" r="2.5" stroke="#CBD5E1" strokeWidth="1.5" fill="none" />
                                             {/* Magnifying glass floating */}
-                                            <circle cx="60" cy="20" r="8" fill="#0D9488" opacity="0.15"/>
-                                            <circle cx="58" cy="18" r="4" stroke="#0D9488" strokeWidth="1.5" fill="none"/>
-                                            <line x1="61" y1="21" x2="64" y2="24" stroke="#0D9488" strokeWidth="1.5" strokeLinecap="round"/>
+                                            <circle cx="60" cy="20" r="8" fill="#0D9488" opacity="0.15" />
+                                            <circle cx="58" cy="18" r="4" stroke="#0D9488" strokeWidth="1.5" fill="none" />
+                                            <line x1="61" y1="21" x2="64" y2="24" stroke="#0D9488" strokeWidth="1.5" strokeLinecap="round" />
                                         </svg>
                                     </div>
                                     <h3 className="font-bold text-base mb-1.5 font-display" style={{ color: 'var(--gsi-text)' }}>Search your area</h3>
@@ -440,27 +457,27 @@ export default function HomeClient() {
                                         style={{ background: 'var(--gsi-accent-light)', border: '2px solid #FDE68A' }}>
                                         <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
                                             {/* Left card */}
-                                            <rect x="6" y="16" width="30" height="42" rx="4" fill="white" stroke="#D97706" strokeWidth="1.5"/>
-                                            <rect x="10" y="21" width="12" height="3" rx="1.5" fill="#0D9488" opacity="0.7"/>
-                                            <rect x="10" y="27" width="22" height="2" rx="1" fill="#E5E7EB"/>
-                                            <rect x="10" y="32" width="18" height="2" rx="1" fill="#E5E7EB"/>
+                                            <rect x="6" y="16" width="30" height="42" rx="4" fill="white" stroke="#D97706" strokeWidth="1.5" />
+                                            <rect x="10" y="21" width="12" height="3" rx="1.5" fill="#0D9488" opacity="0.7" />
+                                            <rect x="10" y="27" width="22" height="2" rx="1" fill="#E5E7EB" />
+                                            <rect x="10" y="32" width="18" height="2" rx="1" fill="#E5E7EB" />
                                             {/* Score circle on left */}
-                                            <circle cx="21" cy="45" r="7" fill="#F0FDFA" stroke="#0D9488" strokeWidth="1.5"/>
+                                            <circle cx="21" cy="45" r="7" fill="#F0FDFA" stroke="#0D9488" strokeWidth="1.5" />
                                             <text x="21" y="48" textAnchor="middle" fill="#0D9488" fontSize="8" fontWeight="bold">7.2</text>
                                             {/* Right card */}
-                                            <rect x="44" y="16" width="30" height="42" rx="4" fill="white" stroke="#D97706" strokeWidth="1.5"/>
-                                            <rect x="48" y="21" width="12" height="3" rx="1.5" fill="#0D9488" opacity="0.7"/>
-                                            <rect x="48" y="27" width="22" height="2" rx="1" fill="#E5E7EB"/>
-                                            <rect x="48" y="32" width="18" height="2" rx="1" fill="#E5E7EB"/>
+                                            <rect x="44" y="16" width="30" height="42" rx="4" fill="white" stroke="#D97706" strokeWidth="1.5" />
+                                            <rect x="48" y="21" width="12" height="3" rx="1.5" fill="#0D9488" opacity="0.7" />
+                                            <rect x="48" y="27" width="22" height="2" rx="1" fill="#E5E7EB" />
+                                            <rect x="48" y="32" width="18" height="2" rx="1" fill="#E5E7EB" />
                                             {/* Score circle on right */}
-                                            <circle cx="59" cy="45" r="7" fill="#FEF3C7" stroke="#D97706" strokeWidth="1.5"/>
+                                            <circle cx="59" cy="45" r="7" fill="#FEF3C7" stroke="#D97706" strokeWidth="1.5" />
                                             <text x="59" y="48" textAnchor="middle" fill="#D97706" fontSize="8" fontWeight="bold">8.5</text>
                                             {/* VS badge */}
-                                            <circle cx="40" cy="37" r="8" fill="#D97706"/>
+                                            <circle cx="40" cy="37" r="8" fill="#D97706" />
                                             <text x="40" y="40" textAnchor="middle" fill="white" fontSize="7" fontWeight="bold">VS</text>
                                             {/* Arrows */}
-                                            <path d="M34 37 L32 37" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round"/>
-                                            <path d="M46 37 L48 37" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round"/>
+                                            <path d="M34 37 L32 37" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round" />
+                                            <path d="M46 37 L48 37" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round" />
                                         </svg>
                                     </div>
                                     <h3 className="font-bold text-base mb-1.5 font-display" style={{ color: 'var(--gsi-text)' }}>Compare side-by-side</h3>
@@ -480,26 +497,26 @@ export default function HomeClient() {
                                         style={{ background: 'var(--gsi-success-light)', border: '2px solid #BBF7D0' }}>
                                         <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
                                             {/* School building */}
-                                            <rect x="42" y="24" width="28" height="32" rx="2" fill="white" stroke="#16A34A" strokeWidth="1.5"/>
+                                            <rect x="42" y="24" width="28" height="32" rx="2" fill="white" stroke="#16A34A" strokeWidth="1.5" />
                                             {/* Roof/triangle */}
-                                            <path d="M40 24 L56 12 L72 24" stroke="#16A34A" strokeWidth="1.5" fill="#F0FDF4" strokeLinejoin="round"/>
+                                            <path d="M40 24 L56 12 L72 24" stroke="#16A34A" strokeWidth="1.5" fill="#F0FDF4" strokeLinejoin="round" />
                                             {/* Door */}
-                                            <rect x="52" y="40" width="8" height="16" rx="1" fill="#DCFCE7" stroke="#16A34A" strokeWidth="1"/>
+                                            <rect x="52" y="40" width="8" height="16" rx="1" fill="#DCFCE7" stroke="#16A34A" strokeWidth="1" />
                                             {/* Windows */}
-                                            <rect x="46" y="30" width="6" height="6" rx="1" fill="#DCFCE7" stroke="#16A34A" strokeWidth="0.8"/>
-                                            <rect x="60" y="30" width="6" height="6" rx="1" fill="#DCFCE7" stroke="#16A34A" strokeWidth="0.8"/>
+                                            <rect x="46" y="30" width="6" height="6" rx="1" fill="#DCFCE7" stroke="#16A34A" strokeWidth="0.8" />
+                                            <rect x="60" y="30" width="6" height="6" rx="1" fill="#DCFCE7" stroke="#16A34A" strokeWidth="0.8" />
                                             {/* Flag */}
-                                            <line x1="56" y1="12" x2="56" y2="6" stroke="#16A34A" strokeWidth="1.5"/>
-                                            <rect x="56" y="6" width="6" height="4" rx="0.5" fill="#16A34A" opacity="0.6"/>
+                                            <line x1="56" y1="12" x2="56" y2="6" stroke="#16A34A" strokeWidth="1.5" />
+                                            <rect x="56" y="6" width="6" height="4" rx="0.5" fill="#16A34A" opacity="0.6" />
                                             {/* Parent figure */}
-                                            <circle cx="22" cy="34" r="4" fill="#0D9488" opacity="0.8"/>
-                                            <path d="M22 38 L22 52 M18 44 L26 44 M22 52 L18 60 M22 52 L26 60" stroke="#0D9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                            <circle cx="22" cy="34" r="4" fill="#0D9488" opacity="0.8" />
+                                            <path d="M22 38 L22 52 M18 44 L26 44 M22 52 L18 60 M22 52 L26 60" stroke="#0D9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                             {/* Child figure */}
-                                            <circle cx="32" cy="40" r="3" fill="#D97706" opacity="0.8"/>
-                                            <path d="M32 43 L32 52 M29 47 L35 47 M32 52 L29 58 M32 52 L35 58" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                            <circle cx="32" cy="40" r="3" fill="#D97706" opacity="0.8" />
+                                            <path d="M32 43 L32 52 M29 47 L35 47 M32 52 L29 58 M32 52 L35 58" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                             {/* Checkmark badge */}
-                                            <circle cx="14" cy="26" r="6" fill="#16A34A" opacity="0.15"/>
-                                            <path d="M11 26 L13 28 L17 24" stroke="#16A34A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                            <circle cx="14" cy="26" r="6" fill="#16A34A" opacity="0.15" />
+                                            <path d="M11 26 L13 28 L17 24" stroke="#16A34A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                         </svg>
                                     </div>
                                     <h3 className="font-bold text-base mb-1.5 font-display" style={{ color: 'var(--gsi-text)' }}>Choose with confidence</h3>

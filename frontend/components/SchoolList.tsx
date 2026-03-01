@@ -3,7 +3,6 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import FilterSidebar from '@/components/FilterSidebar';
 import SchoolCard from '@/components/SchoolCard';
-import { MOCK_SCHOOLS } from '@/constants';
 import { FilterState } from '@/types';
 import { SlidersHorizontal, SearchX, RotateCcw, Loader2 } from 'lucide-react';
 
@@ -11,10 +10,10 @@ interface SchoolListProps {
     initialFilters?: Partial<FilterState>;
     title?: string;
     subtitle?: string;
-    schools?: typeof MOCK_SCHOOLS; // Allow passing pre-filtered schools (SSR) or default to MOCK
+    schools?: any[];
 }
 
-export default function SchoolList({ initialFilters, title, subtitle, schools = MOCK_SCHOOLS }: SchoolListProps) {
+export default function SchoolList({ initialFilters, title, subtitle, schools = [] }: SchoolListProps) {
     const [showMobileFilters, setShowMobileFilters] = useState(false);
     const [visibleCount, setVisibleCount] = useState(10);
     const [isLoadingMore, setIsLoadingMore] = useState(false);

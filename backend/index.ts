@@ -395,6 +395,25 @@ app.get('/api/stats/total-schools', async (req, res) => {
   }
 });
 
+// Per-state school counts for homepage
+app.get('/api/stats/states', async (req, res) => {
+  try {
+    const { statsTable } = getTables();
+    const result = await pool.query(`
+      SELECT state, COUNT(*) as count
+      FROM ${statsTable}
+      WHERE state IS NOT NULL
+      GROUP BY state
+      ORDER BY count DESC
+      LIMIT 20
+    `);
+    res.json(result.rows.map(r => ({ state: r.state, count: parseInt(r.count, 10) })));
+  } catch (err) {
+    console.error("Error fetching state stats:", err);
+    res.status(500).json({ error: 'State stats failed' });
+  }
+});
+
 // Config/Metadata Endpoint
 /**
  * @swagger
