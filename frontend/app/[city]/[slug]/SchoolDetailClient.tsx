@@ -11,14 +11,15 @@ import InfoTooltip from '@/components/InfoTooltip';
 import LoginModal from '@/components/LoginModal';
 import {
     MapPin, Phone, User, CheckCircle, ChevronDown, ChevronUp, ShieldCheck, Heart, Share2, Scale, Navigation,
-    GraduationCap, BookOpen, Building, Laptop, Trophy, Mail, FileCheck, Zap, Wifi, Lock
+    GraduationCap, BookOpen, Building, Laptop, Trophy, Mail, FileCheck, Zap, Wifi, Lock,
+    Droplets, BatteryCharging, Mic2, Accessibility, Users, BarChart2, ChevronRight, Projector
 } from 'lucide-react';
 
 /* ── Helper: Quality Metric Card with ring indicator ── */
 const MetricCard = ({ status, label, value, sub, tooltip }: { status: 'good' | 'avg' | 'poor', label: string, value: string | number, sub: string, tooltip: string }) => {
     const styles = {
         good: { bg: 'var(--gsi-success-light)', border: '#BBF7D0', color: '#065F46', ring: 'var(--gsi-success)', pct: 100 },
-        avg:  { bg: 'var(--gsi-warning-light)', border: '#FDE68A', color: '#92400E', ring: 'var(--gsi-warning)', pct: 60 },
+        avg: { bg: 'var(--gsi-warning-light)', border: '#FDE68A', color: '#92400E', ring: 'var(--gsi-warning)', pct: 60 },
         poor: { bg: 'var(--gsi-danger-light)', border: '#FECACA', color: '#991B1B', ring: 'var(--gsi-danger)', pct: 30 },
     };
     const s = styles[status];
@@ -54,7 +55,7 @@ const AccordionSection = ({ title, icon, defaultOpen, children }: { title: strin
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="w-full flex items-center justify-between p-5 transition-colors"
-                style={{ }}
+                style={{}}
                 onMouseEnter={(e) => e.currentTarget.style.background = 'var(--gsi-bg)'}
                 onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
             >
@@ -78,6 +79,24 @@ const InfraItem = ({ icon, label, value }: { icon: React.ReactNode, label: strin
             <p className="text-sm font-semibold" style={{ color: 'var(--gsi-text)' }}>{value}</p>
         </div>
     </div>
+);
+
+/* ── Helper: Progress Bar ── */
+const ProgressBar = ({ pct, color = 'var(--gsi-primary)' }: { pct: number; color?: string }) => (
+    <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--gsi-border-light)' }}>
+        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.min(pct, 100)}%`, background: color }} />
+    </div>
+);
+
+/* ── Helper: Yes/No Badge ── */
+const YesNoBadge = ({ val }: { val: boolean }) => (
+    <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full"
+        style={val
+            ? { background: 'var(--gsi-success-light)', color: '#065F46' }
+            : { background: 'var(--gsi-danger-light)', color: '#991B1B' }
+        }>
+        {val ? '✓ Yes' : '✗ No'}
+    </span>
 );
 
 /* ── Helper: Fee Table ── */
@@ -278,7 +297,7 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
                                         title="Share on WhatsApp"
                                     >
                                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
                                         </svg>
                                     </a>
                                 </div>
@@ -355,21 +374,180 @@ const SchoolDetailClient: React.FC<SchoolDetailClientProps> = ({ school }) => {
                                     {gpt > 0 && gpt !== Infinity && <MetricCard status={gpt > 40 ? 'avg' : 'good'} label="Girls Hygiene" value={`1 : ${gpt}`} sub="Toilet per girls" tooltip="RTE Benchmark: 1 toilet per 25-40 girls." />}
                                     {bpt > 0 && bpt !== Infinity && <MetricCard status={bpt > 40 ? 'avg' : 'good'} label="Boys Hygiene" value={`1 : ${bpt}`} sub="Toilet per boys" tooltip="RTE Benchmark: 1 toilet per 25-40 boys." />}
                                     {(school.instructionalDays || 0) > 0 && <MetricCard status={daysPct >= 100 ? 'good' : 'avg'} label="School Days" value={school.instructionalDays || "N/A"} sub="Days per year" tooltip="RTE Benchmark: 220 instructional days per year." />}
+                                    {(school.furniture_availability_pct || school.stusHvFurnt > 0) && (() => {
+                                        const furniturePct = school.furniture_availability_pct
+                                            ? Math.round(school.furniture_availability_pct)
+                                            : Math.round(((school.stusHvFurnt || 0) / (school.rowTotal || 1)) * 100);
+                                        return <MetricCard status={furniturePct > 80 ? 'good' : furniturePct > 50 ? 'avg' : 'poor'} label="Furniture" value={`${furniturePct}%`} sub="Students with furniture" tooltip="Measures learning environment quality. Target: 80%+ students with proper seating." />;
+                                    })()}
+                                    {(school.gender_parity_index || (school.rowGirlTotal > 0 && school.rowTotal > 0)) && (() => {
+                                        const gpi = school.gender_parity_index
+                                            ? Number(school.gender_parity_index).toFixed(2)
+                                            : ((school.rowGirlTotal / school.rowTotal) * 2).toFixed(2);
+                                        const gpiNum = parseFloat(String(gpi));
+                                        return <MetricCard status={gpiNum >= 0.9 && gpiNum <= 1.1 ? 'good' : gpiNum >= 0.75 ? 'avg' : 'poor'} label="Gender Parity" value={gpi} sub="GPI (1.0 = equal)" tooltip="Gender Parity Index: 1.0 means equal boys and girls. UNESCO target: 0.97–1.03." />;
+                                    })()}
                                 </div>
                             </div>
 
                             {/* Infrastructure */}
                             <AccordionSection title="Infrastructure & Facilities" icon={<Building className="w-4 h-4" style={{ color: 'var(--gsi-primary)' }} />} defaultOpen={true}>
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                    <InfraItem icon={<Laptop className="w-4 h-4" />} label="Computers" value={school.desktopFun + school.laptopTot} />
-                                    <InfraItem icon={<Zap className="w-4 h-4" />} label="Smart Boards" value={school.digiBoardTot} />
-                                    <InfraItem icon={<BookOpen className="w-4 h-4" />} label="Library" value={school.libraryYnDesc} />
-                                    <InfraItem icon={<Trophy className="w-4 h-4" />} label="Playground" value={school.playgroundYnDesc} />
-                                    <InfraItem icon={<Wifi className="w-4 h-4" />} label="Internet" value={school.internetYnDesc} />
-                                    <InfraItem icon={<Building className="w-4 h-4" />} label="Building" value={school.bldStatus} />
-                                    <InfraItem icon={<ShieldCheck className="w-4 h-4" />} label="Boundary Wall" value={school.bndrywallType} />
-                                    <InfraItem icon={<CheckCircle className="w-4 h-4" />} label="Ramps" value={school.rampsYn === 1 ? "Yes" : "No"} />
-                                    <InfraItem icon={<CheckCircle className="w-4 h-4" />} label="Fire Safety" value={school.fireSafetyYn === 1 ? "Yes" : "No"} />
+                                    <InfraItem icon={<Laptop className="w-4 h-4" />} label="Computers" value={(school.desktopFun || 0) + (school.laptopTot || 0)} />
+                                    <InfraItem icon={<Zap className="w-4 h-4" />} label="Smart Boards" value={school.digiBoardTot || 0} />
+                                    {school.projectorTot > 0 && <InfraItem icon={<Projector className="w-4 h-4" />} label="Projectors" value={school.projectorTot} />}
+                                    <InfraItem icon={<BookOpen className="w-4 h-4" />} label="Library" value={school.libraryYnDesc || 'No'} />
+                                    <InfraItem icon={<Trophy className="w-4 h-4" />} label="Playground" value={school.playgroundYnDesc || 'No'} />
+                                    <InfraItem icon={<Wifi className="w-4 h-4" />} label="Internet" value={school.internetYnDesc || 'No'} />
+                                    <InfraItem icon={<BatteryCharging className="w-4 h-4" />} label="Electricity" value={school.electricityYnDesc || 'No'} />
+                                    <InfraItem icon={<Droplets className="w-4 h-4" />} label="Drinking Water" value={school.drinkWaterYnDesc || 'No'} />
+                                    {school.auditoriumYn && <InfraItem icon={<Mic2 className="w-4 h-4" />} label="Auditorium" value={school.auditoriumYn ? 'Yes' : 'No'} />}
+                                    <InfraItem icon={<Building className="w-4 h-4" />} label="Building Status" value={school.bldStatus || 'N/A'} />
+                                    <InfraItem icon={<ShieldCheck className="w-4 h-4" />} label="Boundary Wall" value={school.bndrywallType || 'N/A'} />
+                                    <InfraItem icon={<CheckCircle className="w-4 h-4" />} label="Fire Safety" value={school.fireSafetyYn === 1 ? 'Yes' : 'No'} />
+                                    {school.medchkYnDesc && <InfraItem icon={<Users className="w-4 h-4" />} label="Medical Check" value={school.medchkYnDesc} />}
+                                </div>
+                            </AccordionSection>
+
+                            {/* Teacher Breakdown */}
+                            {school.totalTeacher > 0 && (
+                                <AccordionSection title="Teacher Breakdown" icon={<Users className="w-4 h-4" style={{ color: 'var(--gsi-primary)' }} />} defaultOpen={false}>
+                                    <div className="space-y-4">
+                                        {/* Regular vs Contract */}
+                                        <div>
+                                            <div className="flex justify-between text-xs font-semibold mb-1.5" style={{ color: 'var(--gsi-text-secondary)' }}>
+                                                <span>Regular Teachers</span>
+                                                <span>{school.tchReg || 0} of {school.totalTeacher}</span>
+                                            </div>
+                                            <ProgressBar pct={((school.tchReg || 0) / school.totalTeacher) * 100} color="var(--gsi-success)" />
+                                        </div>
+                                        <div>
+                                            <div className="flex justify-between text-xs font-semibold mb-1.5" style={{ color: 'var(--gsi-text-secondary)' }}>
+                                                <span>Contract Teachers</span>
+                                                <span>{school.tchCont || 0} of {school.totalTeacher}</span>
+                                            </div>
+                                            <ProgressBar pct={((school.tchCont || 0) / school.totalTeacher) * 100} color="var(--gsi-warning)" />
+                                        </div>
+                                        {(school.profQual3 || school.totTchGraduateAbove || school.totTchPgraduateAbove) && (
+                                            <div>
+                                                <div className="flex justify-between text-xs font-semibold mb-1.5" style={{ color: 'var(--gsi-text-secondary)' }}>
+                                                    <span>B.Ed / Graduate+ Qualified</span>
+                                                    <span>{school.profQual3 || school.totTchGraduateAbove || 0} of {school.totalTeacher}</span>
+                                                </div>
+                                                <ProgressBar pct={((school.profQual3 || school.totTchGraduateAbove || 0) / school.totalTeacher) * 100} color="var(--gsi-primary)" />
+                                            </div>
+                                        )}
+                                        {school.tchRecvdServiceTrng > 0 && (
+                                            <div>
+                                                <div className="flex justify-between text-xs font-semibold mb-1.5" style={{ color: 'var(--gsi-text-secondary)' }}>
+                                                    <span>Received In-Service Training</span>
+                                                    <span>{school.tchRecvdServiceTrng} of {school.totalTeacher}</span>
+                                                </div>
+                                                <ProgressBar pct={(school.tchRecvdServiceTrng / school.totalTeacher) * 100} color="#6366F1" />
+                                            </div>
+                                        )}
+                                        <div className="grid grid-cols-3 gap-3 pt-2" style={{ borderTop: '1px solid var(--gsi-border-light)' }}>
+                                            <div className="text-center p-2 rounded-lg" style={{ background: 'var(--gsi-bg)' }}>
+                                                <span className="block text-lg font-extrabold" style={{ color: 'var(--gsi-text)' }}>{school.totalTeacher}</span>
+                                                <span className="text-[10px] uppercase font-bold" style={{ color: 'var(--gsi-text-muted)' }}>Total</span>
+                                            </div>
+                                            <div className="text-center p-2 rounded-lg" style={{ background: 'var(--gsi-success-light)' }}>
+                                                <span className="block text-lg font-extrabold" style={{ color: '#065F46' }}>{school.tchReg || 0}</span>
+                                                <span className="text-[10px] uppercase font-bold" style={{ color: '#065F46', opacity: 0.7 }}>Regular</span>
+                                            </div>
+                                            <div className="text-center p-2 rounded-lg" style={{ background: 'var(--gsi-warning-light)' }}>
+                                                <span className="block text-lg font-extrabold" style={{ color: '#92400E' }}>{school.tchCont || 0}</span>
+                                                <span className="text-[10px] uppercase font-bold" style={{ color: '#92400E', opacity: 0.7 }}>Contract</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </AccordionSection>
+                            )}
+
+                            {/* Student Enrollment & Gender */}
+                            {school.rowTotal > 0 && (
+                                <AccordionSection title="Student Enrollment" icon={<BarChart2 className="w-4 h-4" style={{ color: 'var(--gsi-primary)' }} />} defaultOpen={false}>
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-3 gap-3">
+                                            <div className="text-center p-3 rounded-lg" style={{ background: 'var(--gsi-bg)' }}>
+                                                <span className="block text-xl font-extrabold" style={{ color: 'var(--gsi-text)' }}>{school.rowTotal.toLocaleString()}</span>
+                                                <span className="text-[10px] uppercase font-bold" style={{ color: 'var(--gsi-text-muted)' }}>Total</span>
+                                            </div>
+                                            {school.rowBoyTotal > 0 && (
+                                                <div className="text-center p-3 rounded-lg" style={{ background: '#EFF6FF' }}>
+                                                    <span className="block text-xl font-extrabold" style={{ color: '#1D4ED8' }}>{school.rowBoyTotal.toLocaleString()}</span>
+                                                    <span className="text-[10px] uppercase font-bold" style={{ color: '#1D4ED8', opacity: 0.7 }}>Boys</span>
+                                                </div>
+                                            )}
+                                            {school.rowGirlTotal > 0 && (
+                                                <div className="text-center p-3 rounded-lg" style={{ background: '#FDF2F8' }}>
+                                                    <span className="block text-xl font-extrabold" style={{ color: '#9D174D' }}>{school.rowGirlTotal.toLocaleString()}</span>
+                                                    <span className="text-[10px] uppercase font-bold" style={{ color: '#9D174D', opacity: 0.7 }}>Girls</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        {school.rowGirlTotal > 0 && (
+                                            <div>
+                                                <div className="flex justify-between text-xs font-semibold mb-1.5" style={{ color: 'var(--gsi-text-secondary)' }}>
+                                                    <span>Girls Enrollment</span>
+                                                    <span>{Math.round((school.rowGirlTotal / school.rowTotal) * 100)}%</span>
+                                                </div>
+                                                <div className="w-full h-3 rounded-full overflow-hidden flex" style={{ background: '#EFF6FF' }}>
+                                                    <div className="h-full transition-all duration-700" style={{ width: `${Math.round((school.rowGirlTotal / school.rowTotal) * 100)}%`, background: '#DB2777' }} />
+                                                </div>
+                                                <div className="flex justify-between text-[10px] mt-1" style={{ color: 'var(--gsi-text-muted)' }}>
+                                                    <span>Girls {school.rowGirlTotal.toLocaleString()}</span>
+                                                    <span>Boys {(school.rowBoyTotal || school.rowTotal - school.rowGirlTotal).toLocaleString()}</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {school.stusHvFurnt > 0 && (
+                                            <div>
+                                                <div className="flex justify-between text-xs font-semibold mb-1.5" style={{ color: 'var(--gsi-text-secondary)' }}>
+                                                    <span>Students with Furniture</span>
+                                                    <span>{school.stusHvFurnt.toLocaleString()} ({Math.round((school.stusHvFurnt / school.rowTotal) * 100)}%)</span>
+                                                </div>
+                                                <ProgressBar pct={(school.stusHvFurnt / school.rowTotal) * 100} color="var(--gsi-primary)" />
+                                            </div>
+                                        )}
+                                    </div>
+                                </AccordionSection>
+                            )}
+
+                            {/* Disability Inclusion */}
+                            <AccordionSection title="Disability & Inclusion" icon={<Accessibility className="w-4 h-4" style={{ color: 'var(--gsi-primary)' }} />} defaultOpen={false}>
+                                <div className="space-y-3">
+                                    <p className="text-xs mb-3" style={{ color: 'var(--gsi-text-muted)' }}>RTE Act requires all schools to be accessible to children with special needs (CWSN).</p>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="p-3 rounded-lg flex items-center gap-3" style={{ background: 'var(--gsi-bg)', border: '1px solid var(--gsi-border-light)' }}>
+                                            <Accessibility className="w-5 h-5 shrink-0" style={{ color: 'var(--gsi-primary)' }} />
+                                            <div>
+                                                <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--gsi-text-muted)' }}>Ramps</p>
+                                                <YesNoBadge val={school.rampsYn === 1} />
+                                            </div>
+                                        </div>
+                                        <div className="p-3 rounded-lg flex items-center gap-3" style={{ background: 'var(--gsi-bg)', border: '1px solid var(--gsi-border-light)' }}>
+                                            <ChevronRight className="w-5 h-5 shrink-0" style={{ color: 'var(--gsi-primary)' }} />
+                                            <div>
+                                                <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--gsi-text-muted)' }}>Handrails</p>
+                                                <YesNoBadge val={school.handrailsYn === 1} />
+                                            </div>
+                                        </div>
+                                        <div className="p-3 rounded-lg flex items-center gap-3" style={{ background: 'var(--gsi-bg)', border: '1px solid var(--gsi-border-light)' }}>
+                                            <Users className="w-5 h-5 shrink-0" style={{ color: 'var(--gsi-primary)' }} />
+                                            <div>
+                                                <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--gsi-text-muted)' }}>CWSN Toilets</p>
+                                                <p className="text-sm font-bold" style={{ color: 'var(--gsi-text)' }}>{school.toiletbCwsnFun || 0} functional</p>
+                                            </div>
+                                        </div>
+                                        <div className="p-3 rounded-lg flex items-center gap-3" style={{ background: 'var(--gsi-bg)', border: '1px solid var(--gsi-border-light)' }}>
+                                            <ShieldCheck className="w-5 h-5 shrink-0" style={{ color: 'var(--gsi-primary)' }} />
+                                            <div>
+                                                <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--gsi-text-muted)' }}>Medical Check</p>
+                                                <YesNoBadge val={school.medchkYnDesc === 'Yes'} />
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </AccordionSection>
 
